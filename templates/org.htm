@@ -1,0 +1,8 @@
+{{template "head.htm" .}}
+    <div id="app">
+      <h2>{{.OrgName}}</h2>
+      {{range .Repos}}
+        <div>{{.Name}}</div>
+      {{end}}
+    </div>
+{{template "foot.htm" .}}
