@@ -1,5 +1,10 @@
 {{template "head.htm" .}}
-    <main class="container">
+    <main id="app" class="container">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item active" aria-current="page"><i class="bi bi-house-door-fill"></i> Home</li>
+        </ol>
+      </nav>
       <div class="accordion" id="accordionOrg">
         {{range $index, $element := .Orgs}}
           <div class="accordion-item">
@@ -12,7 +17,7 @@
               <div class="accordion-body">
                 {{range .Repos}}
                   <h5>
-                    <span class="badge text-bg-secondary"><i class="bi bi-git"></i> {{.Name}}</span>
+                    <span class="badge text-bg-secondary" role="button" @click="openRepo" :data-org="'{{$element.Name}}'" :data-repo="'{{.Name}}'"><i class="bi bi-git"></i> {{.Name}}</span>
                   </h5>
                 {{end}}
               </div>
@@ -21,4 +26,24 @@
         {{end}}
       </div>
     </main>
+
+    <script>
+      'use strict'
+      const { createApp } = Vue
+      createApp({
+        data() {
+          return {}
+        },
+        computed: {},
+        methods: {
+          openRepo(e) {
+            let org = e.currentTarget.dataset.org
+            let repo = e.currentTarget.dataset.repo
+            window.location.href = `/${org}/${repo}`
+          }
+        },
+        created() {},
+        delimiters: ['{[{', '}]}'],
+      }).mount('#app')
+    </script>
 {{template "foot.htm" .}}

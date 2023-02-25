@@ -1,9 +1,19 @@
 {{template "head.htm" .}}
     <main class="container">
-      <h2>{{.OrgName}}/{{.RepoName}}</h2>
-      {{range .Entries}}
-        <div>{{.IsDir}}</div>
-        <div>{{.Name}}</div>
-      {{end}}
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i> Home</a></li>
+          <li class="breadcrumb-item active" aria-current="page">{{.RepoName}}.{{.OrgName}}</li>
+        </ol>
+      </nav>
+      <div class="list-group">
+        {{range .Entries}}
+          <div class="list-group-item list-group-item-action">
+            <a href="#">
+              <i class="bi bi-{{if .IsDir}}folder-fill{{else}}file-earmark{{end}} text-primary"></i> {{.Name}}
+            </a>
+          </div>
+        {{end}}
+      </div>
     </main>
 {{template "foot.htm" .}}
