@@ -1,7 +1,24 @@
 {{template "head.htm" .}}
-    <div id="app">
-      {{range .Orgs}}
-        <div>{{.Name}}</div>
-      {{end}}
-    </div>
+    <main class="container">
+      <div class="accordion" id="accordionOrg">
+        {{range $index, $element := .Orgs}}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-{{$index}}">
+              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{$index}}" aria-expanded="true" aria-controls="collapse-{{$index}}">
+                <i class="bi bi-building"></i> {{.Name}}
+              </button>
+            </h2>
+            <div id="collapse-{{$index}}" class="accordion-collapse collapse show" aria-labelledby="heading-{{$index}}" data-bs-parent="#accordionOrg">
+              <div class="accordion-body">
+                {{range .Repos}}
+                  <h5>
+                    <span class="badge text-bg-secondary"><i class="bi bi-git"></i> {{.Name}}</span>
+                  </h5>
+                {{end}}
+              </div>
+            </div>
+          </div>
+        {{end}}
+      </div>
+    </main>
 {{template "foot.htm" .}}

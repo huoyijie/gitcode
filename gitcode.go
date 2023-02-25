@@ -16,7 +16,8 @@ import (
 )
 
 type Org struct {
-	Name string
+	Name  string
+	Repos []Repo
 }
 
 type Repo struct {
@@ -61,29 +62,22 @@ func main() {
 		var orgs []Org
 		for _, v := range entries {
 			if v.IsDir() {
-				orgs = append(orgs, Org{Name: v.Name()})
+				subEntries, err := os.ReadDir(filepath.Join(REPOS_DIR, v.Name()))
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				var repos []Repo
+				for _, vsub := range subEntries {
+					if vsub.IsDir() && strings.HasSuffix(vsub.Name(), ".git") {
+						repos = append(repos, Repo{Name: strings.TrimSuffix(vsub.Name(), ".git")})
+					}
+				}
+				orgs = append(orgs, Org{Name: v.Name(), Repos: repos})
 			}
 		}
 		c.HTML(http.StatusOK, "index.htm", gin.H{
 			"Orgs": orgs,
-		})
-	})
-	router.GET("/:orgName", func(c *gin.Context) {
-		orgName := c.Param("orgName")
-		entries, err := os.ReadDir(filepath.Join(REPOS_DIR, orgName))
-		if err != nil {
-			log.Fatal(err)
-		}
-		var repos []Repo
-		for _, v := range entries {
-			if v.IsDir() {
-				repos = append(repos, Repo{Name: strings.TrimSuffix(v.Name(), ".git")})
-			}
-		}
-
-		c.HTML(http.StatusOK, "org.htm", gin.H{
-			"OrgName": orgName,
-			"Repos":   repos,
 		})
 	})
 	router.GET("/:orgName/:repoName", func(c *gin.Context) {

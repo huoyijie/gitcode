@@ -1,9 +1,9 @@
 {{template "head.htm" .}}
-    <div id="app">
+    <main class="container">
       <h2>{{.OrgName}}/{{.RepoName}}</h2>
       {{range .Entries}}
         <div>{{.IsDir}}</div>
         <div>{{.Name}}</div>
       {{end}}
-    </div>
+    </main>
 {{template "foot.htm" .}}
