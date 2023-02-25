@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -107,6 +108,15 @@ func main() {
 			entries = append(entries, DirEntry{
 				Name:  entry.Name,
 				IsDir: !entry.Mode.IsFile(),
+			})
+		}
+
+		if len(entries) > 0 {
+			sort.Slice(entries, func(i, j int) bool {
+				if entries[i].IsDir == entries[j].IsDir {
+					return entries[i].Name <= entries[j].Name
+				}
+				return entries[i].IsDir
 			})
 		}
 
