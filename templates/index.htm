@@ -17,7 +17,7 @@
               <div class="accordion-body">
                 {{range .Repos}}
                   <h5>
-                    <span class="badge text-bg-secondary" role="button" @click="openRepo" :data-org="'{{$element.Name}}'" :data-repo="'{{.Name}}'"><i class="bi bi-git"></i> {{.Name}}</span>
+                    <span class="badge text-bg-success" role="button" @click="openRepo" :data-org="'{{$element.Name}}'" :data-repo="'{{.Name}}'"><i class="bi bi-git"></i> {{.Name}}</span>
                   </h5>
                 {{end}}
               </div>

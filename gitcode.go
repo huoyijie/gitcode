@@ -38,32 +38,16 @@ func newTemplate() (tmpl *template.Template) {
 	return
 }
 
-func main() {
-	var (
-		port            int
-		host, REPOS_DIR string
-	)
-
-	flag.IntVar(&port, "port", 8000, "the port that server listen on")
-	flag.StringVar(&host, "host", "0.0.0.0", "the host that server listen on")
-	flag.StringVar(&REPOS_DIR, "repos", "/srv", "the director where repos store")
-	flag.Parse()
-
-	router := gin.Default()
-	router.SetHTMLTemplate(newTemplate())
-
-	router.GET("/favicon.ico", func(c *gin.Context) {
-		c.AbortWithStatus(http.StatusNotFound)
-	})
-	router.GET("/", func(c *gin.Context) {
-		entries, err := os.ReadDir(REPOS_DIR)
+func homeHandler() func(*gin.Context) {
+	return func(c *gin.Context) {
+		entries, err := os.ReadDir(reposDir)
 		if err != nil {
 			log.Fatal(err)
 		}
 		var orgs []Org
 		for _, v := range entries {
 			if v.IsDir() {
-				subEntries, err := os.ReadDir(filepath.Join(REPOS_DIR, v.Name()))
+				subEntries, err := os.ReadDir(filepath.Join(reposDir, v.Name()))
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -80,11 +64,14 @@ func main() {
 		c.HTML(http.StatusOK, "index.htm", gin.H{
 			"Orgs": orgs,
 		})
-	})
-	router.GET("/:orgName/:repoName", func(c *gin.Context) {
+	}
+}
+
+func noRouteHandler() func(*gin.Context) {
+	return func(c *gin.Context) {
 		orgName := c.Param("orgName")
 		repoName := c.Param("repoName")
-		repo, err := git.PlainOpen(filepath.Join(REPOS_DIR, orgName, repoName+".git"))
+		repo, err := git.PlainOpen(filepath.Join(reposDir, orgName, repoName+".git"))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -125,7 +112,29 @@ func main() {
 			"RepoName": repoName,
 			"Entries":  entries,
 		})
+	}
+}
+
+var (
+	port           int
+	host, reposDir string
+)
+
+func main() {
+
+	flag.IntVar(&port, "port", 8000, "the port that server listen on")
+	flag.StringVar(&host, "host", "0.0.0.0", "the host that server listen on")
+	flag.StringVar(&reposDir, "repos", "/srv", "the director where repos store")
+	flag.Parse()
+
+	router := gin.Default()
+	router.SetHTMLTemplate(newTemplate())
+
+	router.GET("/favicon.ico", func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusNotFound)
 	})
+	router.GET("/", homeHandler())
+	router.GET("/:orgName/:repoName", noRouteHandler())
 
 	router.SetTrustedProxies(nil)
 	router.Run(fmt.Sprintf("%s:%d", host, port))
