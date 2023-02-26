@@ -8,9 +8,13 @@
       </nav>
       <div class="list-group">
         {{range .Entries}}
-          <div class="list-group-item list-group-item-action">
+          <div class="list-group-item list-group-item-action{{if .IsParent}} bg-light{{end}}">
             <a href="{{.Path}}" class="text-decoration-none">
-              <i class="bi bi-{{if .IsDir}}folder-fill  text-primary{{else}}file-earmark text-dark{{end}}"></i> <span class="text-dark">{{.Name}}</span>
+              {{if .IsParent}}
+                <div class="text-dark">{{.Name}}</div>
+              {{else}}
+                <i class="bi bi-{{if .IsDir}}folder-fill  text-primary{{else}}file-earmark text-dark{{end}}"></i> <span class="text-dark">{{.Name}}</span>
+              {{end}}
             </a>
           </div>
         {{end}}

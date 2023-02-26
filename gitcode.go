@@ -31,6 +31,10 @@ type DirEntry struct {
 	IsDir      bool
 }
 
+func (entry *DirEntry) IsParent() bool {
+	return entry.IsDir && entry.Name == ".."
+}
+
 //go:embed templates/*
 var tmplFS embed.FS
 
@@ -114,18 +118,25 @@ func getEntryType(isFile bool) string {
 func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath string) []DirEntry {
 	var entries []DirEntry
 
+	pathFmt := "/" + filepath.Join(orgName, repoName, "%s", branchName, entryPath, "%s")
+
 	dstTree := tree
 	if len(entryPath) > 0 {
 		var err error
 		if dstTree, err = tree.Tree(entryPath); err != nil {
 			log.Fatal(err)
 		}
+		entries = append(entries, DirEntry{
+			Name:  "..",
+			Path:  fmt.Sprintf(pathFmt, getEntryType(false), ".."),
+			IsDir: true,
+		})
 	}
 
 	for _, entry := range dstTree.Entries {
 		entries = append(entries, DirEntry{
 			Name:  entry.Name,
-			Path:  "/" + filepath.Join(orgName, repoName, getEntryType(entry.Mode.IsFile()), branchName, entryPath, entry.Name),
+			Path:  fmt.Sprintf(pathFmt, getEntryType(entry.Mode.IsFile()), entry.Name),
 			IsDir: !entry.Mode.IsFile(),
 		})
 	}
