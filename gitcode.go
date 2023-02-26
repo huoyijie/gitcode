@@ -38,7 +38,7 @@ type Dir struct {
 
 type File struct {
 	Breadcrumb []string
-	MIME       string
+	Binary     bool
 	Size       int64
 	Contents   string
 }
@@ -194,10 +194,11 @@ func noRouteHandler() func(*gin.Context) {
 			}
 
 			contents := "Binary"
-			if bin, err := file.IsBinary(); err != nil {
+			isBinary, err := file.IsBinary()
+			if err != nil {
 				log.Fatal(err)
-			} else if !bin {
-				var err error
+			}
+			if !isBinary {
 				contents, err = file.Contents()
 				if err != nil {
 					log.Fatal(err)
@@ -209,7 +210,7 @@ func noRouteHandler() func(*gin.Context) {
 				"RepoName":   repoName,
 				"BranchName": branchName,
 				"Blob":       true,
-				"File":       File{breadcrumb, "MIME", file.Size, contents},
+				"File":       File{breadcrumb, isBinary, file.Size, contents},
 			})
 		} else {
 			c.AbortWithStatus(http.StatusNotFound)
