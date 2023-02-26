@@ -22,7 +22,11 @@
         </div>
       {{end}}
       {{if .Blob}}
-        <div>{{.File.Contents}}</div>
+        <div>
+          <code>
+            {{.File.Contents}}
+          </code>
+        </div>
       {{end}}
     </main>
 {{template "foot.htm" .}}
