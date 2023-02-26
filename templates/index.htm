@@ -16,7 +16,7 @@
             <div id="collapse-{{$index}}" class="accordion-collapse collapse show" aria-labelledby="heading-{{$index}}" data-bs-parent="#accordionOrg">
               <div class="accordion-body">
                 {{range .Repos}}
-                  <h5>
+                  <h5 class="d-inline-block me-2">
                     <span class="badge text-bg-success" role="button" @click="openRepo" :data-org="'{{$element.Name}}'" :data-repo="'{{.Name}}'"><i class="bi bi-git"></i> {{.Name}}</span>
                   </h5>
                 {{end}}
