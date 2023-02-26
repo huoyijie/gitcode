@@ -23,9 +23,7 @@
       {{end}}
       {{if .Blob}}
         <div>
-          <code>
-            {{.File.Contents}}
-          </code>
+          <pre class="line-numbers language-{{.File.Lang}}" data-src="{{.File.RawPath}}"></pre>
         </div>
       {{end}}
     </main>

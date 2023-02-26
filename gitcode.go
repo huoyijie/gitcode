@@ -5,7 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -38,9 +40,9 @@ type Dir struct {
 
 type File struct {
 	Breadcrumb []string
-	Binary     bool
 	Size       int64
-	Contents   string
+	RawPath    string
+	Lang       string
 }
 
 func (entry *Entry) IsParent() bool {
@@ -85,7 +87,7 @@ func homeHandler() func(*gin.Context) {
 }
 
 func parseParams(path string) (orgName, repoName, branchName string, Breadcrumb []string) {
-	tmp := strings.Split(strings.TrimSuffix(path, "/"), "/")
+	tmp := strings.Split(path, "/")
 	orgName = tmp[1]
 	repoName = tmp[2]
 	branchName = tmp[4]
@@ -166,7 +168,8 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 
 func noRouteHandler() func(*gin.Context) {
 	return func(c *gin.Context) {
-		path := c.Request.URL.Path
+		path := strings.TrimSuffix(c.Request.URL.Path, "/")
+
 		// /:orgName/:repoName/tree/:branchName/...
 		if strings.Contains(path, "/tree/") {
 			orgName, repoName, branchName, breadcrumb := parseParams(path)
@@ -183,7 +186,7 @@ func noRouteHandler() func(*gin.Context) {
 				"Dir":        Dir{breadcrumb, entries},
 			})
 		} else if strings.Contains(path, "/blob/") {
-			// /:orgName/:repoName/blob/:branchName/...
+			// /:orgName/:repoName/blob/:branchName/...[?raw=true]
 			orgName, repoName, branchName, breadcrumb := parseParams(path)
 
 			tree := getRepoTree(orgName, repoName, branchName)
@@ -193,25 +196,33 @@ func noRouteHandler() func(*gin.Context) {
 				log.Fatal(err)
 			}
 
-			contents := "Binary"
-			isBinary, err := file.IsBinary()
-			if err != nil {
-				log.Fatal(err)
-			}
-			if !isBinary {
-				contents, err = file.Contents()
+			ext := filepath.Ext(path)
+			raw := c.Query("raw") == "true"
+			if raw {
+				reader, err := file.Reader()
 				if err != nil {
 					log.Fatal(err)
 				}
+				contentType := mime.TypeByExtension(ext)
+				if len(contentType) == 0 {
+					contentType = "text/plain; charset=utf-8"
+				}
+				c.Writer.Header().Set("Content-type", contentType)
+				c.Status(200)
+				io.Copy(c.Writer, reader)
+			} else {
+				lang := "none"
+				if len(ext) > 0 {
+					lang = ext[1:]
+				}
+				c.HTML(http.StatusOK, "repo.htm", gin.H{
+					"OrgName":    orgName,
+					"RepoName":   repoName,
+					"BranchName": branchName,
+					"Blob":       true,
+					"File":       File{breadcrumb, file.Size, path + "?raw=true", lang},
+				})
 			}
-
-			c.HTML(http.StatusOK, "repo.htm", gin.H{
-				"OrgName":    orgName,
-				"RepoName":   repoName,
-				"BranchName": branchName,
-				"Blob":       true,
-				"File":       File{breadcrumb, isBinary, file.Size, contents},
-			})
 		} else {
 			c.AbortWithStatus(http.StatusNotFound)
 		}
