@@ -6,18 +6,23 @@
           <li class="breadcrumb-item active" aria-current="page">{{.OrgName}}.{{.RepoName}}</li>
         </ol>
       </nav>
-      <div class="list-group">
-        {{range .Entries}}
-          <div class="list-group-item list-group-item-action">
-            <a href="{{.Path}}" class="text-decoration-none">
-              {{if .IsParent}}
-                <div class="text-dark">{{.Name}}</div>
-              {{else}}
-                <i class="bi bi-{{if .IsDir}}folder-fill  text-primary{{else}}file-earmark text-dark{{end}}"></i> <span class="text-dark">{{.Name}}</span>
-              {{end}}
-            </a>
-          </div>
-        {{end}}
-      </div>
+      {{if .Tree}}
+        <div class="list-group">
+          {{range .Dir.Entries}}
+            <div class="list-group-item list-group-item-action">
+              <a href="{{.Path}}" class="text-decoration-none">
+                {{if .IsParent}}
+                  <div class="text-dark">{{.Name}}</div>
+                {{else}}
+                  <i class="bi bi-{{if .IsDir}}folder-fill  text-primary{{else}}file-earmark text-dark{{end}}"></i> <span class="text-dark">{{.Name}}</span>
+                {{end}}
+              </a>
+            </div>
+          {{end}}
+        </div>
+      {{end}}
+      {{if .Blob}}
+        <div>{{.File.Contents}}</div>
+      {{end}}
     </main>
 {{template "foot.htm" .}}

@@ -26,12 +26,24 @@ type Repo struct {
 	Name string
 }
 
-type DirEntry struct {
+type Entry struct {
 	Name, Path string
 	IsDir      bool
 }
 
-func (entry *DirEntry) IsParent() bool {
+type Dir struct {
+	Breadcrumb []string
+	Entries    []Entry
+}
+
+type File struct {
+	Breadcrumb []string
+	MIME       string
+	Size       int64
+	Contents   string
+}
+
+func (entry *Entry) IsParent() bool {
 	return entry.IsDir && entry.Name == ".."
 }
 
@@ -72,12 +84,12 @@ func homeHandler() func(*gin.Context) {
 	}
 }
 
-func parseParams(path string) (orgName, repoName, branchName, entryPath string) {
+func parseParams(path string) (orgName, repoName, branchName string, Breadcrumb []string) {
 	tmp := strings.Split(strings.TrimSuffix(path, "/"), "/")
 	orgName = tmp[1]
 	repoName = tmp[2]
 	branchName = tmp[4]
-	entryPath = strings.Join(tmp[5:], "/")
+	Breadcrumb = tmp[5:]
 	return
 }
 
@@ -115,8 +127,8 @@ func getEntryType(isFile bool) string {
 	}
 }
 
-func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath string) []DirEntry {
-	var entries []DirEntry
+func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath string) []Entry {
+	var entries []Entry
 
 	pathFmt := "/" + filepath.Join(orgName, repoName, "%s", branchName, entryPath, "%s")
 
@@ -126,7 +138,7 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 		if dstTree, err = tree.Tree(entryPath); err != nil {
 			log.Fatal(err)
 		}
-		entries = append(entries, DirEntry{
+		entries = append(entries, Entry{
 			Name:  "..",
 			Path:  fmt.Sprintf(pathFmt, getEntryType(false), ".."),
 			IsDir: true,
@@ -134,7 +146,7 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 	}
 
 	for _, entry := range dstTree.Entries {
-		entries = append(entries, DirEntry{
+		entries = append(entries, Entry{
 			Name:  entry.Name,
 			Path:  fmt.Sprintf(pathFmt, getEntryType(entry.Mode.IsFile()), entry.Name),
 			IsDir: !entry.Mode.IsFile(),
@@ -157,21 +169,48 @@ func noRouteHandler() func(*gin.Context) {
 		path := c.Request.URL.Path
 		// /:orgName/:repoName/tree/:branchName/...
 		if strings.Contains(path, "/tree/") {
-			orgName, repoName, branchName, entryPath := parseParams(path)
+			orgName, repoName, branchName, breadcrumb := parseParams(path)
 
 			tree := getRepoTree(orgName, repoName, branchName)
 
-			entries := getTreeEntries(tree, orgName, repoName, branchName, entryPath)
+			entries := getTreeEntries(tree, orgName, repoName, branchName, strings.Join(breadcrumb, "/"))
 
 			c.HTML(http.StatusOK, "repo.htm", gin.H{
-				"OrgName":  orgName,
-				"RepoName": repoName,
-				"Entries":  entries,
+				"OrgName":    orgName,
+				"RepoName":   repoName,
+				"BranchName": branchName,
+				"Tree":       true,
+				"Dir":        Dir{breadcrumb, entries},
 			})
 		} else if strings.Contains(path, "/blob/") {
 			// /:orgName/:repoName/blob/:branchName/...
-			orgName, repoName, branchName, entryPath := parseParams(path)
-			fmt.Println("blob", orgName, repoName, branchName, entryPath)
+			orgName, repoName, branchName, breadcrumb := parseParams(path)
+
+			tree := getRepoTree(orgName, repoName, branchName)
+
+			file, err := tree.File(strings.Join(breadcrumb, "/"))
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			contents := "Binary"
+			if bin, err := file.IsBinary(); err != nil {
+				log.Fatal(err)
+			} else if !bin {
+				var err error
+				contents, err = file.Contents()
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+
+			c.HTML(http.StatusOK, "repo.htm", gin.H{
+				"OrgName":    orgName,
+				"RepoName":   repoName,
+				"BranchName": branchName,
+				"Blob":       true,
+				"File":       File{breadcrumb, "MIME", file.Size, contents},
+			})
 		} else {
 			c.AbortWithStatus(http.StatusNotFound)
 		}
