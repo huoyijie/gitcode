@@ -33,20 +33,23 @@ type Entry struct {
 	IsDir      bool
 }
 
+func (entry *Entry) IsParent() bool {
+	return entry.IsDir && entry.Name == ".."
+}
+
 type Dir struct {
-	Breadcrumb []string
-	Entries    []Entry
+	Entries []Entry
 }
 
 type File struct {
-	Breadcrumb []string
-	Size       int64
-	RawPath    string
-	Lang       string
+	Size    int64
+	RawPath string
+	Lang    string
 }
 
-func (entry *Entry) IsParent() bool {
-	return entry.IsDir && entry.Name == ".."
+type BreadcrumbItem struct {
+	Name, Path string
+	Last       bool
 }
 
 //go:embed templates/*
@@ -166,32 +169,54 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 	return entries
 }
 
+func getBreadcrumb(branchPath string, breadcrumb []string) []BreadcrumbItem {
+	tmp := make([]BreadcrumbItem, len(breadcrumb))
+	for i := range breadcrumb {
+		tmp[i].Name = breadcrumb[i]
+		tmp[i].Path = filepath.Join(branchPath, strings.Join(breadcrumb[:i+1], "/"))
+		tmp[i].Last = i == len(breadcrumb)-1
+	}
+	return tmp
+}
+
 func noRouteHandler() func(*gin.Context) {
 	return func(c *gin.Context) {
 		path := strings.TrimSuffix(c.Request.URL.Path, "/")
+		isTree := strings.Contains(path, "/tree/")
+		isBlob := strings.Contains(path, "/blob/")
+
+		// only handle tree or blob requests
+		if !(isTree || isBlob) {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		orgName, repoName, branchName, breadcrumb := parseParams(path)
+		branchPath := fmt.Sprintf("/%s/%s/tree/%s", orgName, repoName, branchName)
+		entryPath := strings.Join(breadcrumb, "/")
+
+		tree := getRepoTree(orgName, repoName, branchName)
 
 		// /:orgName/:repoName/tree/:branchName/...
-		if strings.Contains(path, "/tree/") {
-			orgName, repoName, branchName, breadcrumb := parseParams(path)
-
-			tree := getRepoTree(orgName, repoName, branchName)
-
-			entries := getTreeEntries(tree, orgName, repoName, branchName, strings.Join(breadcrumb, "/"))
+		if isTree {
+			entries := getTreeEntries(tree, orgName, repoName, branchName, entryPath)
 
 			c.HTML(http.StatusOK, "repo.htm", gin.H{
 				"OrgName":    orgName,
 				"RepoName":   repoName,
 				"BranchName": branchName,
+				"BranchPath": branchPath,
 				"Tree":       true,
-				"Dir":        Dir{breadcrumb, entries},
+				"Root":       len(breadcrumb) == 0,
+				"Breadcrumb": getBreadcrumb(branchPath, breadcrumb),
+				"Dir":        Dir{entries},
 			})
-		} else if strings.Contains(path, "/blob/") {
-			// /:orgName/:repoName/blob/:branchName/...[?raw=true]
-			orgName, repoName, branchName, breadcrumb := parseParams(path)
+			return
+		}
 
-			tree := getRepoTree(orgName, repoName, branchName)
-
-			file, err := tree.File(strings.Join(breadcrumb, "/"))
+		// /:orgName/:repoName/blob/:branchName/...[?raw=true]
+		if isBlob {
+			file, err := tree.File(entryPath)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -219,12 +244,12 @@ func noRouteHandler() func(*gin.Context) {
 					"OrgName":    orgName,
 					"RepoName":   repoName,
 					"BranchName": branchName,
+					"BranchPath": branchPath,
 					"Blob":       true,
-					"File":       File{breadcrumb, file.Size, path + "?raw=true", lang},
+					"Breadcrumb": getBreadcrumb(branchPath, breadcrumb),
+					"File":       File{file.Size, path + "?raw=true", lang},
 				})
 			}
-		} else {
-			c.AbortWithStatus(http.StatusNotFound)
 		}
 	}
 }

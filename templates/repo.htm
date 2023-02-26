@@ -3,7 +3,18 @@
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i> Home</a></li>
-          <li class="breadcrumb-item active" aria-current="page">{{.OrgName}}.{{.RepoName}}</li>
+          {{if and .Tree .Root}}
+            <li class="breadcrumb-item active" aria-current="page">{{.OrgName}}.{{.RepoName}}</li>
+          {{else}}
+            <li class="breadcrumb-item"><a href="{{.BranchPath}}">{{.OrgName}}.{{.RepoName}}</a></li>
+          {{end}}
+          {{range .Breadcrumb}}
+            {{if .Last}}
+              <li class="breadcrumb-item active" aria-current="page">{{.Name}}</li>
+            {{else}}
+              <li class="breadcrumb-item"><a href="{{.Path}}">{{.Name}}</a></li>
+            {{end}}
+          {{end}}
         </ol>
       </nav>
       {{if .Tree}}
