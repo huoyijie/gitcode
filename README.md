@@ -8,12 +8,14 @@ self-hosted git server written in Go
 * show branchs
 * show breadcrumb
 * show commits
-* sign in
+* ssh proxy/ssh clone
 * render markdown/readme
+* create new repo
 * search repo
 
 ## Future
 
+* sign in
 * search code
 * issues
 * pull request
