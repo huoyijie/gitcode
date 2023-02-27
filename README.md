@@ -1,6 +1,22 @@
 # gitcode
 self-hosted git server written in Go
 
+## Run gitcode
+
+### server
+
+```bash
+# Listen on 127.0.0.1:8787
+$ gitcode -port 8787 -repos /home/git
+```
+
+### client
+
+```bash
+# Access gitcode server through SSH tunnel
+$ ssh -N -L 8787:127.0.0.1:8787 git@huoyijie.cn
+```
+
 ## TODO
 
 * show binary files `done`
