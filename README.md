@@ -3,13 +3,13 @@ self-hosted git server written in Go
 
 ## TODO
 
-* show binary files
+* show binary files `done`
 * show submodules
 * show branchs
-* show breadcrumb
+* show breadcrumb `done`
 * show commits
 * ssh proxy/ssh clone
-* render markdown/readme
+* render markdown/readme `done`
 * create new repo
 * search repo
 
