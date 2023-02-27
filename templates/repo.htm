@@ -1,24 +1,41 @@
 {{template "head.htm" .}}
-    <main>
+    <main id="app">
       <div class="container">
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i> Home</a></li>
-            {{if and .Tree .Root}}
-              <li class="breadcrumb-item active" aria-current="page">{{.OrgName}}.{{.RepoName}}</li>
-            {{else}}
-              <li class="breadcrumb-item"><a href="{{.BranchPath}}">{{.OrgName}}.{{.RepoName}}</a></li>
-            {{end}}
-            {{range .Breadcrumb}}
-              {{if .Last}}
-                <li class="breadcrumb-item active" aria-current="page">{{.Name}}</li>
+        <div class="d-flex justify-content-between">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i> Home</a></li>
+              {{if and .Tree .Root}}
+                <li class="breadcrumb-item active" aria-current="page">{{.OrgName}}.{{.RepoName}}</li>
               {{else}}
-                <li class="breadcrumb-item"><a href="{{.Path}}">{{.Name}}</a></li>
+                <li class="breadcrumb-item"><a href="{{.BranchPath}}">{{.OrgName}}.{{.RepoName}}</a></li>
               {{end}}
-            {{end}}
-          </ol>
-        </nav>
+              {{range .Breadcrumb}}
+                {{if .Last}}
+                  <li class="breadcrumb-item active" aria-current="page">{{.Name}}</li>
+                {{else}}
+                  <li class="breadcrumb-item"><a href="{{.Path}}">{{.Name}}</a></li>
+                {{end}}
+              {{end}}
+            </ol>
+          </nav>
+          {{if and .Tree .Root}}
+            <div style="min-width: 75px">
+              <button class="btn btn-sm btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#collapseClone" aria-expanded="false" aria-controls="collapseClone">
+                <i class="bi bi-code"></i> Clone
+              </button>
+            </div>
+          {{end}}
+        </div>
         {{if .Tree}}
+          {{if .Root}}
+            <div class="collapse" id="collapseClone">
+              <div class="d-flex justify-content-end">
+                <input id="inputClone" ref="inputClone" type="text" class="form-control text-muted" value="git clone git@huoyijie.cn:{{.OrgName}}/{{.RepoName}}.git">
+                <a class="btn btn-outline-dark" style="min-width: 100px" @click="copy"><i class="bi bi-clipboard"></i> {[{btnCopy}]}</a>
+              </div>
+            </div>
+          {{end}}
           <div class="list-group">
             {{range .Dir.Entries}}
               <div class="list-group-item list-group-item-action">
@@ -45,4 +62,31 @@
         </div>
       {{end}}
     </main>
+
+    <script>
+      'use strict'
+      const { createApp } = Vue
+      createApp({
+        data() {
+          return {
+            btnCopy: 'Copy'
+          }
+        },
+        computed: {},
+        methods: {
+          copy() {
+            let that = this
+            that.$refs.inputClone.select()
+            document.execCommand('copy')
+            that.$refs.inputClone.blur()
+            that.btnCopy = 'Copied'
+            setTimeout(() => {
+              that.btnCopy = 'Copy'
+            }, 2000)
+          }
+        },
+        created() {},
+        delimiters: ['{[{', '}]}'],
+      }).mount('#app')
+    </script>
 {{template "foot.htm" .}}
