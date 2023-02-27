@@ -47,7 +47,7 @@ $ systemctl -fu gitcode
 
 Access gitcode server through SSH tunnel
 ```bash
-$ ssh -N -L 8787:127.0.0.1:8787 git@huoyijie.cn
+$ ssh -N -L 8787:127.0.0.1:8787 -o ServerAliveInterval=5 git@huoyijie.cn
 ```
 
 Open `http://127.0.0.1:8787/` with the browser
