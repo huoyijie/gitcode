@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-git/go-git/v5 v5.5.2
+	gopkg.in/yaml.v2 v2.2.4
 )
 
 require (

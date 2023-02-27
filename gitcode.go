@@ -17,7 +17,26 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	yaml "gopkg.in/yaml.v2"
 )
+
+type GitcodeConfig struct {
+	Ignore []string
+}
+
+func loadConfig(conf string) (config *GitcodeConfig) {
+	data, err := os.ReadFile(conf)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	config = &GitcodeConfig{}
+	err = yaml.Unmarshal(data, config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return
+}
 
 type Org struct {
 	Name  string
@@ -67,11 +86,19 @@ func homeHandler() func(*gin.Context) {
 			log.Fatal(err)
 		}
 		var orgs []Org
+	Loop:
 		for _, v := range entries {
 			hidden := strings.HasPrefix(v.Name(), ".")
 			// ignore entries that are hidden or aren't directories.
 			if hidden || !v.IsDir() {
 				continue
+			}
+
+			// ignore entries that are ignored
+			for _, ignore := range config.Ignore {
+				if v.Name() == ignore {
+					continue Loop
+				}
 			}
 
 			subEntries, err := os.ReadDir(filepath.Join(reposDir, v.Name()))
@@ -280,6 +307,7 @@ func noRouteHandler() func(*gin.Context) {
 var (
 	port           int
 	host, reposDir string
+	config         *GitcodeConfig
 )
 
 func main() {
@@ -288,6 +316,7 @@ func main() {
 	flag.StringVar(&host, "host", "127.0.0.1", "the host that server listen on")
 	flag.StringVar(&reposDir, "repos", "/srv", "the director where repos store")
 	flag.Parse()
+	config = loadConfig(filepath.Join(reposDir, "gitcode.yaml"))
 
 	router := gin.Default()
 	router.SetHTMLTemplate(newTemplate())
