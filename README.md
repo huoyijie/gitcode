@@ -59,7 +59,7 @@ Open `http://127.0.0.1:8787/` with the browser
 * show branchs
 * show breadcrumb `done`
 * show commits
-* ssh proxy/ssh clone
+* ssh proxy/ssh clone `done`
 * render markdown/readme `done`
 * create new repo
 * search repo
