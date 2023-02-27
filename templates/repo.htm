@@ -1,40 +1,47 @@
 {{template "head.htm" .}}
-    <main class="container">
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i> Home</a></li>
-          {{if and .Tree .Root}}
-            <li class="breadcrumb-item active" aria-current="page">{{.OrgName}}.{{.RepoName}}</li>
-          {{else}}
-            <li class="breadcrumb-item"><a href="{{.BranchPath}}">{{.OrgName}}.{{.RepoName}}</a></li>
-          {{end}}
-          {{range .Breadcrumb}}
-            {{if .Last}}
-              <li class="breadcrumb-item active" aria-current="page">{{.Name}}</li>
+    <main>
+      <div class="container">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i> Home</a></li>
+            {{if and .Tree .Root}}
+              <li class="breadcrumb-item active" aria-current="page">{{.OrgName}}.{{.RepoName}}</li>
             {{else}}
-              <li class="breadcrumb-item"><a href="{{.Path}}">{{.Name}}</a></li>
+              <li class="breadcrumb-item"><a href="{{.BranchPath}}">{{.OrgName}}.{{.RepoName}}</a></li>
             {{end}}
-          {{end}}
-        </ol>
-      </nav>
-      {{if .Tree}}
-        <div class="list-group">
-          {{range .Dir.Entries}}
-            <div class="list-group-item list-group-item-action">
-              <a href="{{.Path}}" class="text-decoration-none">
-                {{if .IsParent}}
-                  <div class="text-dark">{{.Name}}</div>
-                {{else}}
-                  <i class="bi bi-{{if .IsDir}}folder-fill  text-primary{{else}}file-earmark text-dark{{end}}"></i> <span class="text-dark">{{.Name}}</span>
-                {{end}}
-              </a>
-            </div>
-          {{end}}
-        </div>
-      {{end}}
-      {{if .Blob}}
+            {{range .Breadcrumb}}
+              {{if .Last}}
+                <li class="breadcrumb-item active" aria-current="page">{{.Name}}</li>
+              {{else}}
+                <li class="breadcrumb-item"><a href="{{.Path}}">{{.Name}}</a></li>
+              {{end}}
+            {{end}}
+          </ol>
+        </nav>
+        {{if .Tree}}
+          <div class="list-group">
+            {{range .Dir.Entries}}
+              <div class="list-group-item list-group-item-action">
+                <a href="{{.Path}}" class="text-decoration-none">
+                  {{if .IsParent}}
+                    <div class="text-dark">{{.Name}}</div>
+                  {{else}}
+                    <i class="bi bi-{{if .IsDir}}folder-fill  text-primary{{else}}file-earmark text-dark{{end}}"></i> <span class="text-dark">{{.Name}}</span>
+                  {{end}}
+                </a>
+              </div>
+            {{end}}
+          </div>
+        {{end}}
+        {{if .Blob}}
+          <div>
+            <pre class="line-numbers language-{{.File.Lang}}" data-src="{{.File.RawPath}}"></pre>
+          </div>
+        {{end}}
+      </div>
+      {{if and .Tree .LoadReadme}}
         <div>
-          <pre class="line-numbers language-{{.File.Lang}}" data-src="{{.File.RawPath}}"></pre>
+          <iframe src="{{.ReadmePath}}" width="100%" frameborder="0" scrolling="no" onload="resizeIframe(this)"></iframe>
         </div>
       {{end}}
     </main>

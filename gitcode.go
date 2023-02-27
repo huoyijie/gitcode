@@ -132,8 +132,11 @@ func getEntryType(isFile bool) string {
 	}
 }
 
-func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath string) []Entry {
-	var entries []Entry
+func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath string) ([]Entry, bool) {
+	var (
+		entries    []Entry
+		loadReadme bool
+	)
 
 	pathFmt := "/" + filepath.Join(orgName, repoName, "%s", branchName, entryPath, "%s")
 
@@ -156,6 +159,9 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 			Path:  fmt.Sprintf(pathFmt, getEntryType(entry.Mode.IsFile()), entry.Name),
 			IsDir: !entry.Mode.IsFile(),
 		})
+		if entry.Mode.IsFile() && entry.Name == "README.md" {
+			loadReadme = true
+		}
 	}
 
 	if len(entries) > 0 {
@@ -166,7 +172,7 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 			return entries[i].IsDir
 		})
 	}
-	return entries
+	return entries, loadReadme
 }
 
 func getBreadcrumb(branchPath string, breadcrumb []string) []BreadcrumbItem {
@@ -199,7 +205,7 @@ func noRouteHandler() func(*gin.Context) {
 
 		// /:orgName/:repoName/tree/:branchName/...
 		if isTree {
-			entries := getTreeEntries(tree, orgName, repoName, branchName, entryPath)
+			entries, loadReadme := getTreeEntries(tree, orgName, repoName, branchName, entryPath)
 
 			c.HTML(http.StatusOK, "repo.htm", gin.H{
 				"OrgName":    orgName,
@@ -210,6 +216,8 @@ func noRouteHandler() func(*gin.Context) {
 				"Root":       len(breadcrumb) == 0,
 				"Breadcrumb": getBreadcrumb(branchPath, breadcrumb),
 				"Dir":        Dir{entries},
+				"LoadReadme": loadReadme,
+				"ReadmePath": filepath.Join(fmt.Sprintf("/%s/%s/blob/%s", orgName, repoName, branchName), entryPath, "README.md"),
 			})
 			return
 		}
@@ -240,15 +248,22 @@ func noRouteHandler() func(*gin.Context) {
 				if len(ext) > 0 {
 					lang = ext[1:]
 				}
-				c.HTML(http.StatusOK, "repo.htm", gin.H{
-					"OrgName":    orgName,
-					"RepoName":   repoName,
-					"BranchName": branchName,
-					"BranchPath": branchPath,
-					"Blob":       true,
-					"Breadcrumb": getBreadcrumb(branchPath, breadcrumb),
-					"File":       File{file.Size, path + "?raw=true", lang},
-				})
+				if lang == "md" {
+					c.HTML(http.StatusOK, "readme.htm", gin.H{
+						"BasePath": filepath.Dir(path),
+						"HomePage": filepath.Base(path)+"?raw=true",
+					})
+				} else {
+					c.HTML(http.StatusOK, "repo.htm", gin.H{
+						"OrgName":    orgName,
+						"RepoName":   repoName,
+						"BranchName": branchName,
+						"BranchPath": branchPath,
+						"Blob":       true,
+						"Breadcrumb": getBreadcrumb(branchPath, breadcrumb),
+						"File":       File{file.Size, path + "?raw=true", lang},
+					})
+				}
 			}
 		}
 	}
