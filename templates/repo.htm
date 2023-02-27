@@ -58,7 +58,7 @@
       </div>
       {{if and .Tree .LoadReadme}}
         <div>
-          <iframe src="{{.ReadmePath}}" width="100%" frameborder="0" scrolling="no" onload="resizeIframe(this)"></iframe>
+          <iframe src="{{.ReadmePath}}" width="100%" frameborder="0" scrolling="no" @load="resizeIframe"></iframe>
         </div>
       {{end}}
     </main>
@@ -74,6 +74,15 @@
         },
         computed: {},
         methods: {
+          resizeIframe(e) {
+            let obj = e.currentTarget
+            let interval = setInterval(() => {
+              obj.style.height = obj.contentWindow.document.documentElement.scrollHeight + 'px'
+            }, 200)
+            setTimeout(() => {
+              clearInterval(interval)
+            }, 10000)
+          },
           copy() {
             let that = this
             that.$refs.inputClone.select()
