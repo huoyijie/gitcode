@@ -1,4 +1,4 @@
-module github.com/huoyijie/gitcode.git
+module github.com/huoyijie/gitcode
 
 go 1.20
 
