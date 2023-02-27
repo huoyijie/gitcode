@@ -228,10 +228,14 @@ func noRouteHandler() func(*gin.Context) {
 			if err != nil {
 				log.Fatal(err)
 			}
+			isBin, err := file.IsBinary()
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			ext := filepath.Ext(path)
 			raw := c.Query("raw") == "true"
-			if raw {
+			if raw || isBin {
 				reader, err := file.Reader()
 				if err != nil {
 					log.Fatal(err)
@@ -251,7 +255,7 @@ func noRouteHandler() func(*gin.Context) {
 				if lang == "md" {
 					c.HTML(http.StatusOK, "readme.htm", gin.H{
 						"BasePath": filepath.Dir(path),
-						"HomePage": filepath.Base(path)+"?raw=true",
+						"HomePage": filepath.Base(path) + "?raw=true",
 					})
 				} else {
 					c.HTML(http.StatusOK, "repo.htm", gin.H{
