@@ -68,20 +68,24 @@ func homeHandler() func(*gin.Context) {
 		}
 		var orgs []Org
 		for _, v := range entries {
-			if v.IsDir() {
-				subEntries, err := os.ReadDir(filepath.Join(reposDir, v.Name()))
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				var repos []Repo
-				for _, vsub := range subEntries {
-					if vsub.IsDir() && strings.HasSuffix(vsub.Name(), ".git") {
-						repos = append(repos, Repo{Name: strings.TrimSuffix(vsub.Name(), ".git")})
-					}
-				}
-				orgs = append(orgs, Org{Name: v.Name(), Repos: repos})
+			hidden := strings.HasPrefix(v.Name(), ".")
+			// ignore entries that are hidden or aren't directories.
+			if hidden || !v.IsDir() {
+				continue
 			}
+
+			subEntries, err := os.ReadDir(filepath.Join(reposDir, v.Name()))
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			var repos []Repo
+			for _, vsub := range subEntries {
+				if vsub.IsDir() && strings.HasSuffix(vsub.Name(), ".git") {
+					repos = append(repos, Repo{Name: strings.TrimSuffix(vsub.Name(), ".git")})
+				}
+			}
+			orgs = append(orgs, Org{Name: v.Name(), Repos: repos})
 		}
 		c.HTML(http.StatusOK, "index.htm", gin.H{
 			"Orgs": orgs,
