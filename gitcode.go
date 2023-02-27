@@ -281,7 +281,7 @@ var (
 func main() {
 
 	flag.IntVar(&port, "port", 8000, "the port that server listen on")
-	flag.StringVar(&host, "host", "0.0.0.0", "the host that server listen on")
+	flag.StringVar(&host, "host", "127.0.0.1", "the host that server listen on")
 	flag.StringVar(&reposDir, "repos", "/srv", "the director where repos store")
 	flag.Parse()
 
