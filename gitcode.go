@@ -245,6 +245,7 @@ func noRouteHandler() func(*gin.Context) {
 				"BranchPath": branchPath,
 				"Tree":       true,
 				"Root":       len(breadcrumb) == 0,
+				"GitClone":   fmt.Sprintf("git clone git@%s:%s/%s.git", hostname, orgName, repoName),
 				"Breadcrumb": getBreadcrumb(branchPath, breadcrumb),
 				"Dir":        Dir{entries},
 				"LoadReadme": loadReadme,
@@ -305,15 +306,16 @@ func noRouteHandler() func(*gin.Context) {
 }
 
 var (
-	port           int
-	host, reposDir string
-	config         *GitcodeConfig
+	port                     int
+	host, hostname, reposDir string
+	config                   *GitcodeConfig
 )
 
 func main() {
 
 	flag.IntVar(&port, "port", 8000, "the port that server listen on")
 	flag.StringVar(&host, "host", "127.0.0.1", "the host that server listen on")
+	flag.StringVar(&hostname, "hostname", "huoyijie.cn", "the host name of the server")
 	flag.StringVar(&reposDir, "repos", "/srv", "the director where repos store")
 	flag.Parse()
 	config = loadConfig(filepath.Join(reposDir, "gitcode.yaml"))
