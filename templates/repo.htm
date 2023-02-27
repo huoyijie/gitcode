@@ -31,8 +31,8 @@
           {{if .Root}}
             <div class="collapse" id="collapseClone">
               <div class="d-flex justify-content-end">
-                <input id="inputClone" ref="inputClone" type="text" class="form-control text-muted" value="git clone git@huoyijie.cn:{{.OrgName}}/{{.RepoName}}.git">
-                <a class="btn btn-outline-dark" style="min-width: 100px" @click="copy"><i class="bi bi-clipboard"></i> {[{btnCopy}]}</a>
+                <input id="inputClone" ref="inputClone" type="text" class="form-control form-control-sm text-muted" value="git clone git@huoyijie.cn:{{.OrgName}}/{{.RepoName}}.git">
+                <a class="btn btn-sm btn-outline-dark" style="min-width: 100px" @click="copy"><i class="bi bi-clipboard"></i> {[{btnCopy}]}</a>
               </div>
             </div>
           {{end}}
