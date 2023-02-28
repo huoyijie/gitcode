@@ -55,7 +55,7 @@ Open `http://127.0.0.1:8787/` with the browser
 ## TODO
 
 * show binary files `done`
-* show submodules
+* show submodules `done`
 * show branchs
 * show breadcrumb `done`
 * show commits
