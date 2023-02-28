@@ -16,7 +16,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -96,7 +98,7 @@ func homeHandler() func(*gin.Context) {
 			}
 
 			// ignore entries that are ignored
-			for _, ignore := range config.Ignore {
+			for _, ignore := range gitcodeCfg.Ignore {
 				if v.Name() == ignore {
 					continue Loop
 				}
@@ -142,8 +144,13 @@ func parseParams(path string) (orgName, repoName, branchName string, Breadcrumb 
 	return
 }
 
-func getRepoTree(orgName, repoName, branchName string) *object.Tree {
+func getRepoTree(orgName, repoName, branchName string) (*object.Tree, *config.Config) {
 	repo, err := git.PlainOpen(filepath.Join(reposDir, orgName, repoName+".git"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cfg, err := repo.Config()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -176,7 +183,7 @@ func getRepoTree(orgName, repoName, branchName string) *object.Tree {
 		log.Fatal(err)
 	}
 
-	return tree
+	return tree, cfg
 }
 
 func getEntryType(isFile bool) string {
@@ -187,7 +194,30 @@ func getEntryType(isFile bool) string {
 	}
 }
 
-func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath string) ([]Entry, bool) {
+func isSubmodule(mode filemode.FileMode) bool {
+	return mode == filemode.Submodule
+}
+
+func isDir(mode filemode.FileMode) bool {
+	return mode == filemode.Dir || isSubmodule(mode)
+}
+
+func getEntryPath(cfg *config.Config, entry object.TreeEntry, pathFmt string) string {
+	if isSubmodule(entry.Mode) {
+		sub := cfg.Submodules[entry.Name]
+		repoPath := strings.Split(sub.URL, ":")[1]
+		prefix := reposDir
+		if !strings.HasSuffix(prefix, "/") {
+			prefix += "/"
+		}
+		repoPath = strings.TrimPrefix(repoPath, prefix)
+		repoPath = strings.TrimSuffix(repoPath, ".git")
+		return fmt.Sprintf("/%s/tree/%s", repoPath, entry.Hash)
+	}
+	return fmt.Sprintf(pathFmt, getEntryType(entry.Mode.IsFile()), entry.Name)
+}
+
+func getTreeEntries(tree *object.Tree, cfg *config.Config, orgName, repoName, branchName, entryPath string) ([]Entry, bool) {
 	var (
 		entries    []Entry
 		loadReadme bool
@@ -211,8 +241,8 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 	for _, entry := range dstTree.Entries {
 		entries = append(entries, Entry{
 			Name:  entry.Name,
-			Path:  fmt.Sprintf(pathFmt, getEntryType(entry.Mode.IsFile()), entry.Name),
-			IsDir: !entry.Mode.IsFile(),
+			Path:  getEntryPath(cfg, entry, pathFmt),
+			IsDir: isDir(entry.Mode),
 		})
 		if entry.Mode.IsFile() && entry.Name == "README.md" {
 			loadReadme = true
@@ -254,7 +284,7 @@ func noRouteHandler() func(*gin.Context) {
 
 		orgName, repoName, branchName, breadcrumb := parseParams(path)
 		// ignore entries that are ignored
-		for _, ignore := range config.Ignore {
+		for _, ignore := range gitcodeCfg.Ignore {
 			if orgName == ignore {
 				c.AbortWithStatus(http.StatusNotFound)
 				return
@@ -264,11 +294,11 @@ func noRouteHandler() func(*gin.Context) {
 		branchPath := fmt.Sprintf("/%s/%s/tree/%s", orgName, repoName, branchName)
 		entryPath := strings.Join(breadcrumb, "/")
 
-		tree := getRepoTree(orgName, repoName, branchName)
+		tree, cfg := getRepoTree(orgName, repoName, branchName)
 
 		// /:orgName/:repoName/tree/:branchName/...
 		if isTree {
-			entries, loadReadme := getTreeEntries(tree, orgName, repoName, branchName, entryPath)
+			entries, loadReadme := getTreeEntries(tree, cfg, orgName, repoName, branchName, entryPath)
 
 			c.HTML(http.StatusOK, "repo.htm", gin.H{
 				"OrgName":    orgName,
@@ -340,7 +370,7 @@ func noRouteHandler() func(*gin.Context) {
 var (
 	port                     int
 	host, hostname, reposDir string
-	config                   *GitcodeConfig
+	gitcodeCfg               *GitcodeConfig
 )
 
 func main() {
@@ -350,7 +380,7 @@ func main() {
 	flag.StringVar(&hostname, "hostname", "huoyijie.cn", "the host name of the server")
 	flag.StringVar(&reposDir, "repos", "/srv", "the director where repos store")
 	flag.Parse()
-	config = loadConfig(filepath.Join(reposDir, "gitcode.yaml"))
+	gitcodeCfg = loadConfig(filepath.Join(reposDir, "gitcode.yaml"))
 
 	router := gin.Default()
 	router.SetHTMLTemplate(newTemplate())
