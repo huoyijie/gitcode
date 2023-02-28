@@ -229,6 +229,14 @@ func noRouteHandler() func(*gin.Context) {
 		}
 
 		orgName, repoName, branchName, breadcrumb := parseParams(path)
+		// ignore entries that are ignored
+		for _, ignore := range config.Ignore {
+			if orgName == ignore {
+				c.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+		}
+
 		branchPath := fmt.Sprintf("/%s/%s/tree/%s", orgName, repoName, branchName)
 		entryPath := strings.Join(breadcrumb, "/")
 
