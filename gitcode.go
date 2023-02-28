@@ -274,7 +274,7 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 			if entries[i].IsFolder() == entries[j].IsFolder() {
 				return entries[i].Name <= entries[j].Name
 			}
-			return entries[i].IsDir
+			return entries[i].IsFolder()
 		})
 	}
 	return entries, loadReadme
