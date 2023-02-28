@@ -152,23 +152,21 @@ func getRepoTree(orgName, repoName, branchName string) *object.Tree {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer branches.Close()
 
-	var branch *plumbing.Reference
-	for {
-		branchRef, err := branches.Next()
-		if err != nil {
-			log.Fatal(err)
-		}
-		if branchRef.Name().Short() == branchName {
-			branch = branchRef
+	var commitHash plumbing.Hash
+	branch, err := branches.Next()
+	for ; err == nil; branch, err = branches.Next() {
+		if branch.Name().Short() == branchName {
+			commitHash = branch.Hash()
 			break
 		}
 	}
-	if branch == nil {
-		log.Fatal(orgName, repoName, branchName, "not found")
+	if err != nil {
+		commitHash = plumbing.NewHash(branchName)
 	}
 
-	commit, err := repo.CommitObject(branch.Hash())
+	commit, err := repo.CommitObject(commitHash)
 	if err != nil {
 		log.Fatal(err)
 	}
