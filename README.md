@@ -61,7 +61,7 @@ Open `http://127.0.0.1:8787/` with the browser
 * show commits
 * ssh proxy/ssh clone `done`
 * render markdown/readme `done`
-* create new repo
+* create new repo `done`
 * search repo
 
 ## Future
@@ -70,6 +70,7 @@ Open `http://127.0.0.1:8787/` with the browser
 * search code
 * issues
 * pull request
+* code highlights, auto load script file by backend logic
 * code diff
 * merge request
 * hook and build docker image
