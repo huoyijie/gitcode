@@ -51,8 +51,8 @@ type Repo struct {
 }
 
 type Entry struct {
-	Name, Path         string
-	IsDir, IsSubmodule bool
+	Name, Path                    string
+	IsDir, IsSubmodule, IsSymlink bool
 }
 
 func (entry *Entry) IsParent() bool {
@@ -193,6 +193,10 @@ func getEntryType(isFile bool) string {
 	}
 }
 
+func isSymlink(mode filemode.FileMode) bool {
+	return mode == filemode.Symlink
+}
+
 func isSubmodule(mode filemode.FileMode) bool {
 	return mode == filemode.Submodule
 }
@@ -254,6 +258,7 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 			Path:        fmt.Sprintf(pathFmt, getEntryType(false), ".."),
 			IsDir:       true,
 			IsSubmodule: false,
+			IsSymlink:   false,
 		})
 	}
 
@@ -263,6 +268,7 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 			Path:        getEntryPath(cfg, entry, pathFmt),
 			IsDir:       isDir(entry.Mode),
 			IsSubmodule: isSubmodule(entry.Mode),
+			IsSymlink:   isSymlink(entry.Mode),
 		})
 		if entry.Mode.IsFile() && entry.Name == "README.md" {
 			loadReadme = true
