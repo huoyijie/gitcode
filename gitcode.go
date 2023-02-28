@@ -144,13 +144,8 @@ func parseParams(path string) (orgName, repoName, branchName string, Breadcrumb 
 	return
 }
 
-func getRepoTree(orgName, repoName, branchName string) (*object.Tree, *config.Config) {
+func getRepoTree(orgName, repoName, branchName string) *object.Tree {
 	repo, err := git.PlainOpen(filepath.Join(reposDir, orgName, repoName+".git"))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	cfg, err := repo.Config()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -183,7 +178,7 @@ func getRepoTree(orgName, repoName, branchName string) (*object.Tree, *config.Co
 		log.Fatal(err)
 	}
 
-	return tree, cfg
+	return tree
 }
 
 func getEntryType(isFile bool) string {
@@ -222,11 +217,25 @@ func getEntryPath(cfg *config.Config, entry object.TreeEntry, pathFmt string) st
 	return fmt.Sprintf(pathFmt, getEntryType(entry.Mode.IsFile()), entry.Name)
 }
 
-func getTreeEntries(tree *object.Tree, cfg *config.Config, orgName, repoName, branchName, entryPath string) ([]Entry, bool) {
+func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath string) ([]Entry, bool) {
 	var (
 		entries    []Entry
 		loadReadme bool
+		cfg        *config.Config
 	)
+
+	if submodules, err := tree.File(".gitmodules"); err == nil {
+		reader, err := submodules.Reader()
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer reader.Close()
+
+		cfg, err = config.ReadConfig(reader)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	pathFmt := "/" + filepath.Join(orgName, repoName, "%s", branchName, entryPath, "%s")
 
@@ -299,11 +308,11 @@ func noRouteHandler() func(*gin.Context) {
 		branchPath := fmt.Sprintf("/%s/%s/tree/%s", orgName, repoName, branchName)
 		entryPath := strings.Join(breadcrumb, "/")
 
-		tree, cfg := getRepoTree(orgName, repoName, branchName)
+		tree := getRepoTree(orgName, repoName, branchName)
 
 		// /:orgName/:repoName/tree/:branchName/...
 		if isTree {
-			entries, loadReadme := getTreeEntries(tree, cfg, orgName, repoName, branchName, entryPath)
+			entries, loadReadme := getTreeEntries(tree, orgName, repoName, branchName, entryPath)
 
 			c.HTML(http.StatusOK, "repo.htm", gin.H{
 				"OrgName":    orgName,
@@ -339,6 +348,8 @@ func noRouteHandler() func(*gin.Context) {
 				if err != nil {
 					log.Fatal(err)
 				}
+				defer reader.Close()
+
 				contentType := mime.TypeByExtension(ext)
 				if len(contentType) == 0 {
 					contentType = "text/plain; charset=utf-8"
