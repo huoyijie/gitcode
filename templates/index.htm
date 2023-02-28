@@ -5,6 +5,7 @@
           <li class="breadcrumb-item active" aria-current="page"><i class="bi bi-house-door-fill"></i> Home</li>
         </ol>
       </nav>
+      <div ref="liveAlertPlaceholder"></div>
       <div class="accordion" id="accordionOrg">
         {{range $index, $element := .Orgs}}
           <div class="accordion-item">
@@ -17,7 +18,7 @@
               <div class="accordion-body">
                 {{range .Repos}}
                   <h5 class="d-inline-block me-2">
-                    <span class="badge text-bg-secondary" role="button" @click="openRepo" :data-org="'{{$element.Name}}'" :data-repo="'{{.Name}}'" :data-branch="'{{.DefaultBranch}}'"><i class="bi bi-git"></i> {{.Name}}</span>
+                    <span class="badge text-bg-{{if .Empty}}danger{{else}}secondary{{end}}" role="button" @click="openRepo" :data-org="'{{$element.Name}}'" :data-repo="'{{.Name}}'" :data-branch="'{{.DefaultBranch}}'"><i class="bi bi-{{if .Empty}}x{{else}}git{{end}}"></i> {{.Name}}</span>
                   </h5>
                 {{end}}
               </div>
@@ -32,16 +33,54 @@
       const { createApp } = Vue
       createApp({
         data() {
-          return {}
+          return {
+            hostname: '{{.Hostname}}',
+            org: '{{.DefaultOrg.Name}}',
+            repo: ''
+          }
         },
         computed: {},
         methods: {
+          newRepo() {
+            if (this.org && this.repo) {
+              axios.post(`/orgs/${this.org}/repos/${this.repo}/new`, {
+                org: this.org,
+                repo: this.repo
+              }).then((res) => {
+                console.log(res)
+                window.location.href = '/'
+              }).catch((err) => {
+                console.log(err)
+              }).finally(() => {
+                this.org = ''
+                this.repo = ''
+              })
+            }
+          },
           openRepo(e) {
-            let dataset = e.currentTarget.dataset
-            let org = dataset.org
-            let repo = dataset.repo
-            let branch = dataset.branch
-            window.location.href = `/${org}/${repo}/tree/${branch}`
+            const dataset = e.currentTarget.dataset
+            const org = dataset.org
+            const repo = dataset.repo
+            const branch = dataset.branch
+            if (branch) {
+              window.location.href = `/${org}/${repo}/tree/${branch}`
+            } else {
+              const alertPlaceholder = this.$refs.liveAlertPlaceholder
+              
+              const alert = (message, type) => {
+                const wrapper = document.createElement('div')
+                wrapper.innerHTML = [
+                  `<div class="alert alert-${type} alert-dismissible" role="alert">`,
+                  `   <div>${message}</div>`,
+                  '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+                  '</div>'
+                ].join('')
+
+                alertPlaceholder.append(wrapper)
+              }
+
+              alert(`git clone git@${this.hostname}:${org}/${repo}.git`, 'danger')
+            }
           }
         },
         created() {},

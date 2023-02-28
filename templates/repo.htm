@@ -69,14 +69,32 @@
       createApp({
         data() {
           return {
+            org: '{{.DefaultOrg.Name}}',
+            repo: '',
             btnCopy: 'Copy'
           }
         },
         computed: {},
         methods: {
+          newRepo() {
+            if (this.org && this.repo) {
+              axios.post(`/orgs/${this.org}/repos/${this.repo}/new`, {
+                org: this.org,
+                repo: this.repo
+              }).then((res) => {
+                console.log(res)
+                window.location.href = '/'
+              }).catch((err) => {
+                console.log(err)
+              }).finally(() => {
+                this.org = ''
+                this.repo = ''
+              })
+            }
+          },
           resizeIframe(e) {
-            let obj = e.currentTarget
-            let interval = setInterval(() => {
+            const obj = e.currentTarget
+            const interval = setInterval(() => {
               obj.style.height = obj.contentWindow.document.documentElement.scrollHeight + 'px'
             }, 200)
             setTimeout(() => {
@@ -84,7 +102,7 @@
             }, 10000)
           },
           copy() {
-            let that = this
+            const that = this
             that.$refs.inputClone.select()
             document.execCommand('copy')
             that.$refs.inputClone.blur()

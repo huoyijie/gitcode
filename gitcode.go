@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"errors"
 	"flag"
 	"fmt"
 	"html/template"
@@ -50,6 +51,10 @@ type Repo struct {
 	Name, DefaultBranch string
 }
 
+func (r *Repo) Empty() bool {
+	return r.DefaultBranch == ""
+}
+
 type Entry struct {
 	Name, Path                    string
 	IsDir, IsSubmodule, IsSymlink bool
@@ -86,55 +91,85 @@ func newTemplate() (tmpl *template.Template) {
 	return
 }
 
-func homeHandler() func(*gin.Context) {
-	return func(c *gin.Context) {
-		entries, err := os.ReadDir(reposDir)
+func loadOrgs() []Org {
+	entries, err := os.ReadDir(reposDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var orgs []Org
+Loop:
+	for _, v := range entries {
+		hidden := strings.HasPrefix(v.Name(), ".")
+		// ignore entries that are hidden or aren't directories.
+		if hidden || !v.IsDir() {
+			continue
+		}
+
+		// ignore entries that are ignored
+		for _, ignore := range gitcodeCfg.Ignore {
+			if v.Name() == ignore {
+				continue Loop
+			}
+		}
+
+		subEntries, err := os.ReadDir(filepath.Join(reposDir, v.Name()))
 		if err != nil {
 			log.Fatal(err)
 		}
-		var orgs []Org
-	Loop:
-		for _, v := range entries {
-			hidden := strings.HasPrefix(v.Name(), ".")
-			// ignore entries that are hidden or aren't directories.
-			if hidden || !v.IsDir() {
-				continue
-			}
 
-			// ignore entries that are ignored
-			for _, ignore := range gitcodeCfg.Ignore {
-				if v.Name() == ignore {
-					continue Loop
+		var repos []Repo
+		for _, vsub := range subEntries {
+			if vsub.IsDir() && strings.HasSuffix(vsub.Name(), ".git") {
+				repo, err := git.PlainOpen(filepath.Join(reposDir, v.Name(), vsub.Name()))
+				if err != nil {
+					log.Fatal(err)
 				}
-			}
 
-			subEntries, err := os.ReadDir(filepath.Join(reposDir, v.Name()))
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			var repos []Repo
-			for _, vsub := range subEntries {
-				if vsub.IsDir() && strings.HasSuffix(vsub.Name(), ".git") {
-					repo, err := git.PlainOpen(filepath.Join(reposDir, v.Name(), vsub.Name()))
-					if err != nil {
-						log.Fatal(err)
-					}
-					head, err := repo.Head()
-					if err != nil {
-						log.Fatal(err)
-					}
-
-					repos = append(repos, Repo{
-						Name:          strings.TrimSuffix(vsub.Name(), ".git"),
-						DefaultBranch: head.Name().Short(),
-					})
+				defaultBranch := ""
+				head, err := repo.Head()
+				// New repository dosen't have any refs at all.
+				if err == nil {
+					defaultBranch = head.Name().Short()
 				}
+
+				repos = append(repos, Repo{
+					Name:          strings.TrimSuffix(vsub.Name(), ".git"),
+					DefaultBranch: defaultBranch,
+				})
 			}
-			orgs = append(orgs, Org{Name: v.Name(), Repos: repos})
 		}
+		orgs = append(orgs, Org{Name: v.Name(), Repos: repos})
+	}
+	return orgs
+}
+
+func homeHandler() func(*gin.Context) {
+	return func(c *gin.Context) {
+		orgs := loadOrgs()
 		c.HTML(http.StatusOK, "index.htm", gin.H{
-			"Orgs": orgs,
+			"Orgs":       orgs,
+			"DefaultOrg": orgs[0],
+			"Hostname":   hostname,
+		})
+	}
+}
+
+func newRepoHandler() func(*gin.Context) {
+	return func(c *gin.Context) {
+		orgName := c.Param("orgName")
+		repoName := c.Param("repoName")
+		repoPath := filepath.Join(reposDir, orgName, repoName+".git")
+
+		var code int
+		if _, err := git.PlainInit(repoPath, true); err != nil {
+			if errors.Is(err, git.ErrRepositoryAlreadyExists) {
+				code = -10000
+			} else {
+				code = -10001
+			}
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"Code": code,
 		})
 	}
 }
@@ -322,6 +357,7 @@ func noRouteHandler() func(*gin.Context) {
 
 		tree := getRepoTree(orgName, repoName, branchName)
 
+		orgs := loadOrgs()
 		// /:orgName/:repoName/tree/:branchName/...
 		if isTree {
 			entries, loadReadme := getTreeEntries(tree, orgName, repoName, branchName, entryPath)
@@ -338,6 +374,8 @@ func noRouteHandler() func(*gin.Context) {
 				"Dir":        Dir{entries},
 				"LoadReadme": loadReadme,
 				"ReadmePath": filepath.Join(fmt.Sprintf("/%s/%s/blob/%s", orgName, repoName, branchName), entryPath, "README.md"),
+				"Orgs":       orgs,
+				"DefaultOrg": orgs[0],
 			})
 			return
 		}
@@ -376,8 +414,10 @@ func noRouteHandler() func(*gin.Context) {
 				}
 				if lang == "md" {
 					c.HTML(http.StatusOK, "readme.htm", gin.H{
-						"BasePath": filepath.Dir(path),
-						"HomePage": filepath.Base(path) + "?raw=true",
+						"BasePath":   filepath.Dir(path),
+						"HomePage":   filepath.Base(path) + "?raw=true",
+						"Orgs":       orgs,
+						"DefaultOrg": orgs[0],
 					})
 				} else {
 					c.HTML(http.StatusOK, "repo.htm", gin.H{
@@ -388,6 +428,8 @@ func noRouteHandler() func(*gin.Context) {
 						"Blob":       true,
 						"Breadcrumb": getBreadcrumb(branchPath, breadcrumb),
 						"File":       File{file.Size, path + "?raw=true", lang},
+						"Orgs":       orgs,
+						"DefaultOrg": orgs[0],
 					})
 				}
 			}
@@ -414,6 +456,7 @@ func main() {
 	router.SetHTMLTemplate(newTemplate())
 
 	router.GET("/", homeHandler())
+	router.POST("/orgs/:orgName/repos/:repoName/new", newRepoHandler())
 	router.NoRoute(noRouteHandler())
 
 	router.SetTrustedProxies(nil)

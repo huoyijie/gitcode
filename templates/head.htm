@@ -39,8 +39,34 @@
           </form>
 
           <div class="text-end">
-            <button type="button" class="btn btn-primary">Sign in</button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNewRepo"><i class="bi bi-plus-circle"></i> New Repository</button>
           </div>
         </div>
       </div>
     </header>
+    <!-- Modal -->
+    <div class="modal fade" id="modalNewRepo" tabindex="-1" aria-labelledby="newRepoModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="modalNewRepoLabel">New Repository</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <select class="form-select form-select mb-3" aria-label="Select organization" v-model="org">
+              {{range .Orgs}}
+                <option>{{.Name}}</option>
+              {{end}}
+            </select>
+            <div class="form-floating">
+              <input type="text" class="form-control rounded-3" id="floatingNewRepo" placeholder="Repository" v-model="repo">
+              <label for="floatingNewRepo">Input repository name</label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" @click="newRepo">Submit</button>
+          </div>
+        </div>
+      </div>
+    </div>
