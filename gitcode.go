@@ -59,6 +59,10 @@ func (entry *Entry) IsParent() bool {
 	return entry.IsDir && entry.Name == ".."
 }
 
+func (entry *Entry) IsFolder() bool {
+	return entry.IsDir || entry.IsSubmodule
+}
+
 type Dir struct {
 	Entries []Entry
 }
@@ -267,7 +271,7 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 
 	if len(entries) > 0 {
 		sort.Slice(entries, func(i, j int) bool {
-			if entries[i].IsDir == entries[j].IsDir {
+			if entries[i].IsFolder() == entries[j].IsFolder() {
 				return entries[i].Name <= entries[j].Name
 			}
 			return entries[i].IsDir
