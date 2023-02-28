@@ -63,10 +63,10 @@ Open `http://127.0.0.1:8787/` with the browser
 * render markdown/readme `done`
 * create new repo `done`
 * search repo
+* sign in/auth by role
 
 ## Future
 
-* sign in
 * search code
 * issues
 * pull request
