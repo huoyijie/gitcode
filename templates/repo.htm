@@ -43,7 +43,7 @@
                   {{if .IsParent}}
                     <div class="text-dark">{{.Name}}</div>
                   {{else}}
-                    <i class="bi bi-{{if .IsDir}}folder-fill  text-primary{{else}}file-earmark text-dark{{end}}"></i> <span class="text-dark">{{.Name}}</span>
+                    <i class="bi bi-{{if .IsDir}}folder-fill text-primary{{else if .IsSubmodule}}bi-folder-symlink-fill text-warning{{else}}file-earmark text-dark{{end}}"></i> <span class="text-dark">{{.Name}}</span>
                   {{end}}
                 </a>
               </div>

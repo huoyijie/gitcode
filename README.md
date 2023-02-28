@@ -56,7 +56,7 @@ Open `http://127.0.0.1:8787/` with the browser
 
 * show binary files `done`
 * show submodules `done`
-* show branchs
+* show branchs/tags
 * show breadcrumb `done`
 * show commits
 * ssh proxy/ssh clone `done`

@@ -51,8 +51,8 @@ type Repo struct {
 }
 
 type Entry struct {
-	Name, Path string
-	IsDir      bool
+	Name, Path         string
+	IsDir, IsSubmodule bool
 }
 
 func (entry *Entry) IsParent() bool {
@@ -194,7 +194,7 @@ func isSubmodule(mode filemode.FileMode) bool {
 }
 
 func isDir(mode filemode.FileMode) bool {
-	return mode == filemode.Dir || isSubmodule(mode)
+	return mode == filemode.Dir
 }
 
 func getEntryPath(cfg *config.Config, entry object.TreeEntry, pathFmt string) string {
@@ -246,17 +246,19 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 			log.Fatal(err)
 		}
 		entries = append(entries, Entry{
-			Name:  "..",
-			Path:  fmt.Sprintf(pathFmt, getEntryType(false), ".."),
-			IsDir: true,
+			Name:        "..",
+			Path:        fmt.Sprintf(pathFmt, getEntryType(false), ".."),
+			IsDir:       true,
+			IsSubmodule: false,
 		})
 	}
 
 	for _, entry := range dstTree.Entries {
 		entries = append(entries, Entry{
-			Name:  entry.Name,
-			Path:  getEntryPath(cfg, entry, pathFmt),
-			IsDir: isDir(entry.Mode),
+			Name:        entry.Name,
+			Path:        getEntryPath(cfg, entry, pathFmt),
+			IsDir:       isDir(entry.Mode),
+			IsSubmodule: isSubmodule(entry.Mode),
 		})
 		if entry.Mode.IsFile() && entry.Name == "README.md" {
 			loadReadme = true
