@@ -206,13 +206,18 @@ func getEntryPath(cfg *config.Config, entry object.TreeEntry, pathFmt string) st
 	if isSubmodule(entry.Mode) {
 		sub := cfg.Submodules[entry.Name]
 		repoPath := strings.Split(sub.URL, ":")[1]
-		prefix := reposDir
-		if !strings.HasSuffix(prefix, "/") {
-			prefix += "/"
-		}
-		repoPath = strings.TrimPrefix(repoPath, prefix)
 		repoPath = strings.TrimSuffix(repoPath, ".git")
-		return fmt.Sprintf("/%s/tree/%s", repoPath, entry.Hash)
+
+		if strings.HasPrefix(repoPath, "/") {
+			// absolute path
+			basePath := strings.TrimSuffix(reposDir, "/")
+			repoPath = strings.TrimPrefix(repoPath, basePath)
+		} else {
+			// relative path
+			repoPath = "/" + repoPath
+		}
+
+		return fmt.Sprintf("%s/tree/%s", repoPath, entry.Hash)
 	}
 	return fmt.Sprintf(pathFmt, getEntryType(entry.Mode.IsFile()), entry.Name)
 }
