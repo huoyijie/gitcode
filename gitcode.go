@@ -44,7 +44,7 @@ type Org struct {
 }
 
 type Repo struct {
-	Name string
+	Name, DefaultBranch string
 }
 
 type Entry struct {
@@ -109,7 +109,19 @@ func homeHandler() func(*gin.Context) {
 			var repos []Repo
 			for _, vsub := range subEntries {
 				if vsub.IsDir() && strings.HasSuffix(vsub.Name(), ".git") {
-					repos = append(repos, Repo{Name: strings.TrimSuffix(vsub.Name(), ".git")})
+					repo, err := git.PlainOpen(filepath.Join(reposDir, v.Name(), vsub.Name()))
+					if err != nil {
+						log.Fatal(err)
+					}
+					head, err := repo.Head()
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					repos = append(repos, Repo{
+						Name: strings.TrimSuffix(vsub.Name(), ".git"),
+						DefaultBranch: head.Name().Short(),
+					})
 				}
 			}
 			orgs = append(orgs, Org{Name: v.Name(), Repos: repos})

@@ -17,7 +17,7 @@
               <div class="accordion-body">
                 {{range .Repos}}
                   <h5 class="d-inline-block me-2">
-                    <span class="badge text-bg-secondary" role="button" @click="openRepo" :data-org="'{{$element.Name}}'" :data-repo="'{{.Name}}'"><i class="bi bi-git"></i> {{.Name}}</span>
+                    <span class="badge text-bg-secondary" role="button" @click="openRepo" :data-org="'{{$element.Name}}'" :data-repo="'{{.Name}}'" :data-branch="'{{.DefaultBranch}}'"><i class="bi bi-git"></i> {{.Name}}</span>
                   </h5>
                 {{end}}
               </div>
@@ -37,9 +37,11 @@
         computed: {},
         methods: {
           openRepo(e) {
-            let org = e.currentTarget.dataset.org
-            let repo = e.currentTarget.dataset.repo
-            window.location.href = `/${org}/${repo}/tree/master`
+            let dataset = e.currentTarget.dataset
+            let org = dataset.org
+            let repo = dataset.repo
+            let branch = dataset.branch
+            window.location.href = `/${org}/${repo}/tree/${branch}`
           }
         },
         created() {},
