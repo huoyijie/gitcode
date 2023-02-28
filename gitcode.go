@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -119,7 +120,7 @@ func homeHandler() func(*gin.Context) {
 					}
 
 					repos = append(repos, Repo{
-						Name: strings.TrimSuffix(vsub.Name(), ".git"),
+						Name:          strings.TrimSuffix(vsub.Name(), ".git"),
 						DefaultBranch: head.Name().Short(),
 					})
 				}
@@ -147,14 +148,27 @@ func getRepoTree(orgName, repoName, branchName string) *object.Tree {
 		log.Fatal(err)
 	}
 
-	// todo
-	// get branch by `branchName`
-	head, err := repo.Head()
+	branches, err := repo.Branches()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	commit, err := repo.CommitObject(head.Hash())
+	var branch *plumbing.Reference
+	for {
+		branchRef, err := branches.Next()
+		if err != nil {
+			log.Fatal(err)
+		}
+		if branchRef.Name().Short() == branchName {
+			branch = branchRef
+			break
+		}
+	}
+	if branch == nil {
+		log.Fatal(orgName, repoName, branchName, "not found")
+	}
+
+	commit, err := repo.CommitObject(branch.Hash())
 	if err != nil {
 		log.Fatal(err)
 	}
