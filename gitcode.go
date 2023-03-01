@@ -271,7 +271,7 @@ func getEntryPath(cfg *config.Config, entry object.TreeEntry, pathFmt string) st
 func getLogOptions(commitHash plumbing.Hash, entry string) (opts *git.LogOptions) {
 	opts = &git.LogOptions{
 		From:  commitHash,
-		Order: git.LogOrderCommitterTime,
+		Order: git.LogOrderDFSPost,
 		PathFilter: func(path string) bool {
 			return strings.HasPrefix(path, entry)
 		},
