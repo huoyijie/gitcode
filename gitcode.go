@@ -28,6 +28,17 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+type Action string
+
+const (
+	READ  Action = "read"
+	WRITE Action = "write"
+)
+
+func (a Action) Val() string {
+	return string(a)
+}
+
 type GitcodeConfig struct {
 	Ignore []string
 }
@@ -121,7 +132,7 @@ Loop:
 		}
 
 		// check permissions
-		if ok := enforcer.Enforce("gitcode", v.Name(), "read"); !ok {
+		if ok := enforcer.Enforce("gitcode", v.Name(), READ.Val()); !ok {
 			continue
 		}
 
@@ -180,7 +191,7 @@ func newRepoHandler() func(*gin.Context) {
 		repoPath := filepath.Join(reposDir, orgName, repoName+".git")
 
 		// check permissions
-		if ok := enforcer.Enforce("gitcode", orgName, "write"); !ok {
+		if ok := enforcer.Enforce("gitcode", orgName, WRITE.Val()); !ok {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -422,7 +433,7 @@ func noRouteHandler() func(*gin.Context) {
 		}
 
 		// check permissions
-		if ok := enforcer.Enforce("gitcode", orgName, "read"); !ok {
+		if ok := enforcer.Enforce("gitcode", orgName, READ.Val()); !ok {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
