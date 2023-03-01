@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	TOKEN_MAX_TTL  = 3 * 24 * time.Hour
-	COOKIE_MAX_TTL = 3 * 24 * 60 * 60
+	TOKEN_MAX_TTL      = 3 * 24 * time.Hour
+	COOKIE_MAX_TTL int = 3 * 24 * 60 * 60
 )
 
 func GetSecretKey() *[32]byte {

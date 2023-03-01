@@ -62,6 +62,14 @@ Open `http://127.0.0.1:8787/` with the browser
 * create new repo `done`
 * sign in/auth by role
 
+登录后，右上角 signin 按钮隐藏，变成 sign out。同时显示用户名 gitcode or guest
+
+readme.md 会发两次请求，一次cancel，估计是第一次后端写数据有问题。
+
+权限bug， gitcode 登录后，权限不对
+
+casbin 两个配置文件打包进入二进制文件
+
 ## Future
 
 * show commits (slow)

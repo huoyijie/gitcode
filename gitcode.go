@@ -235,7 +235,7 @@ func signinHandler() func(*gin.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.SetCookie("token", token, COOKIE_MAX_TTL, "/", hostname, true, true)
+		c.SetCookie("token", token, COOKIE_MAX_TTL, "/", "127.0.0.1", true, true)
 		c.JSON(http.StatusOK, gin.H{
 			"Code":  0,
 			"Token": token,
