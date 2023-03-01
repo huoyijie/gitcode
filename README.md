@@ -56,17 +56,17 @@ Open `http://127.0.0.1:8787/` with the browser
 
 * show binary files `done`
 * show submodules `done`
-* show branchs/tags
 * show breadcrumb `done`
-* show commits
 * ssh proxy/ssh clone `done`
 * render markdown/readme `done`
 * create new repo `done`
-* search repo
 * sign in/auth by role
 
 ## Future
 
+* show commits (slow)
+* show branchs/tags
+* search repo
 * search code
 * issues
 * pull request
