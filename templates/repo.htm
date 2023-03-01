@@ -73,13 +73,21 @@
       createApp({
         data() {
           return {
-            org: '{{.DefaultOrg.Name}}',
+            org: "{{.DefaultOrg.Name}}",
             repo: '',
+            btnOpenRepoDisabled: true,
             btnCopy: 'Copy'
           }
         },
         computed: {},
         methods: {
+          change() {
+            if (this.org && this.repo) {
+              this.btnOpenRepoDisabled = false
+            } else {
+              this.btnOpenRepoDisabled = true
+            }
+          },
           newRepo() {
             if (this.org && this.repo) {
               axios.post(`/orgs/${this.org}/repos/${this.repo}/new`, {
@@ -91,9 +99,12 @@
               }).catch((err) => {
                 console.log(err)
               }).finally(() => {
-                this.org = ''
+                this.org = "{{.DefaultOrg.Name}}"
                 this.repo = ''
+                this.btnOpenRepoDisabled = true
               })
+            } else {
+              this.btnOpenRepoDisabled = true
             }
           },
           resizeIframe(e) {
@@ -117,6 +128,14 @@
           }
         },
         created() {},
+        mounted() {
+          const that = this
+          that.$refs.modalNewRepo.addEventListener('hidden.bs.modal', () => {
+            that.org = "{{.DefaultOrg.Name}}"
+            that.repo = ''
+            that.btnOpenRepoDisabled = true
+          })
+        },
         delimiters: ['{[{', '}]}'],
       }).mount('#app')
     </script>

@@ -33,19 +33,18 @@
         </div>
       </div>
       <div class="px-3 py-2 border-bottom mb-3">
-        <div class="container d-flex flex-wrap justify-content-center">
-          <form class="col-12 col-lg-auto mb-2 mb-lg-0 me-lg-auto" role="search">
-            <input type="search" class="form-control" placeholder="Search..." aria-label="Search">
-          </form>
-
-          <div class="text-end">
+        <div class="container d-flex flex-wrap justify-content-between">
+          <div>
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNewRepo"><i class="bi bi-plus-circle"></i> New Repository</button>
+          </div>
+          <div>
+            <button type="button" class="btn btn-secondary">Sign in</button>
           </div>
         </div>
       </div>
     </header>
     <!-- Modal -->
-    <div class="modal fade" id="modalNewRepo" tabindex="-1" aria-labelledby="newRepoModalLabel" aria-hidden="true">
+    <div class="modal fade" id="modalNewRepo" ref="modalNewRepo" tabindex="-1" aria-labelledby="newRepoModalLabel" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -53,19 +52,19 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <select class="form-select form-select mb-3" aria-label="Select organization" v-model="org">
+            <select class="form-select form-select mb-3" aria-label="Select organization" v-model="org" @change="change">
               {{range .Orgs}}
                 <option>{{.Name}}</option>
               {{end}}
             </select>
             <div class="form-floating">
-              <input type="text" class="form-control rounded-3" id="floatingNewRepo" placeholder="Repository" v-model="repo">
-              <label for="floatingNewRepo">Input repository name</label>
+              <input type="text" class="form-control rounded-3" id="floatingNewRepo" placeholder="Repository" v-model="repo" @input="change">
+              <label for="floatingNewRepo" class="text-muted">Input repository name</label>
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary" @click="newRepo">Submit</button>
+            <button type="button" class="btn btn-primary" @click="newRepo" :disabled="btnOpenRepoDisabled">Submit</button>
           </div>
         </div>
       </div>
