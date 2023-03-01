@@ -27,6 +27,7 @@
             </div>
           {{end}}
         </div>
+        <div ref="liveAlertPlaceholder"></div>
         {{if .Tree}}
           {{if .Root}}
             <div class="collapse" id="collapseClone">
@@ -81,6 +82,17 @@
         },
         computed: {},
         methods: {
+          alert(message, type) {
+            const wrapper = document.createElement('div')
+            wrapper.innerHTML = [
+              `<div class="alert alert-${type} alert-dismissible" role="alert">`,
+              `   <div>${message}</div>`,
+              '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+              '</div>'
+            ].join('')
+
+            this.$refs.liveAlertPlaceholder.append(wrapper)
+          },
           change() {
             if (this.org && this.repo) {
               this.btnOpenRepoDisabled = false
@@ -89,22 +101,40 @@
             }
           },
           newRepo() {
-            if (this.org && this.repo) {
-              axios.post(`/orgs/${this.org}/repos/${this.repo}/new`, {
-                org: this.org,
-                repo: this.repo
+            const that = this
+            if (that.org && that.repo) {
+              axios.post(`/orgs/${that.org}/repos/${that.repo}/new`, {
+                org: that.org,
+                repo: that.repo
               }).then((res) => {
-                console.log(res)
-                window.location.href = '/'
+                if (res.data.Code === -10000) {
+                  that.alert('Repository Already Exists', 'danger')
+                  setTimeout(() => {
+                    window.location.reload()
+                  }, 2000)
+                } else {
+                  that.alert('New Empty Repository Created', 'info')
+                  setTimeout(() => {
+                    window.location.href = '/'
+                  }, 2000)
+                }
               }).catch((err) => {
-                console.log(err)
+                if (err.response.status === 401) {
+                  that.alert('Unauthorized', 'danger')
+                  setTimeout(() => {
+                    window.location.href = '/signin'
+                  }, 2000)
+                } else {
+                  that.alert('Internal Server Error', 'danger')
+                  setTimeout(() => {
+                    window.location.reload()
+                  }, 2000)
+                }
               }).finally(() => {
-                this.org = "{{.DefaultOrg}}"
-                this.repo = ''
-                this.btnOpenRepoDisabled = true
+                bootstrap.Modal.getInstance(that.$refs.modalNewRepo).hide()
               })
             } else {
-              this.btnOpenRepoDisabled = true
+              that.btnOpenRepoDisabled = true
             }
           },
           resizeIframe(e) {
