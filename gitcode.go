@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-git/go-git/v5"
@@ -21,6 +23,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/xeonx/timeago"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -58,6 +61,7 @@ func (r *Repo) Empty() bool {
 type Entry struct {
 	Name, Path                    string
 	IsDir, IsSubmodule, IsSymlink bool
+	Commit                        Commit
 }
 
 func (entry *Entry) IsParent() bool {
@@ -81,6 +85,10 @@ type File struct {
 type BreadcrumbItem struct {
 	Name, Path string
 	Last       bool
+}
+
+type Commit struct {
+	Author, Email, Message, TimeAgo string
 }
 
 //go:embed templates/*
@@ -183,7 +191,7 @@ func parseParams(path string) (orgName, repoName, branchName string, Breadcrumb 
 	return
 }
 
-func getRepoTree(orgName, repoName, branchName string) *object.Tree {
+func getRepoTree(orgName, repoName, branchName string) (*git.Repository, *object.Tree, plumbing.Hash) {
 	repo, err := git.PlainOpen(filepath.Join(reposDir, orgName, repoName+".git"))
 	if err != nil {
 		log.Fatal(err)
@@ -217,7 +225,7 @@ func getRepoTree(orgName, repoName, branchName string) *object.Tree {
 		log.Fatal(err)
 	}
 
-	return tree
+	return repo, tree, commitHash
 }
 
 func getEntryType(isFile bool) string {
@@ -260,7 +268,18 @@ func getEntryPath(cfg *config.Config, entry object.TreeEntry, pathFmt string) st
 	return fmt.Sprintf(pathFmt, getEntryType(entry.Mode.IsFile()), entry.Name)
 }
 
-func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath string) ([]Entry, bool) {
+func getLogOptions(commitHash plumbing.Hash, entry string) (opts *git.LogOptions) {
+	opts = &git.LogOptions{
+		From:  commitHash,
+		Order: git.LogOrderCommitterTime,
+		PathFilter: func(path string) bool {
+			return strings.HasPrefix(path, entry)
+		},
+	}
+	return
+}
+
+func getTreeEntries(repo *git.Repository, tree *object.Tree, commitHash plumbing.Hash, orgName, repoName, branchName, entryPath string) ([]Entry, bool) {
 	var (
 		entries    []Entry
 		loadReadme bool
@@ -297,18 +316,49 @@ func getTreeEntries(tree *object.Tree, orgName, repoName, branchName, entryPath 
 		})
 	}
 
-	for _, entry := range dstTree.Entries {
-		entries = append(entries, Entry{
-			Name:        entry.Name,
-			Path:        getEntryPath(cfg, entry, pathFmt),
-			IsDir:       isDir(entry.Mode),
-			IsSubmodule: isSubmodule(entry.Mode),
-			IsSymlink:   isSymlink(entry.Mode),
-		})
-		if entry.Mode.IsFile() && entry.Name == "README.md" {
-			loadReadme = true
-		}
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	now := time.Now()
+	for i := range dstTree.Entries {
+		wg.Add(1)
+
+		i := i
+		go func() {
+			defer wg.Done()
+
+			entry := dstTree.Entries[i]
+			commits, err := repo.Log(getLogOptions(commitHash, filepath.Join(entryPath, entry.Name)))
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer commits.Close()
+			commit, err := commits.Next()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			lock.Lock()
+			defer lock.Unlock()
+			entries = append(entries, Entry{
+				Name:        entry.Name,
+				Path:        getEntryPath(cfg, entry, pathFmt),
+				IsDir:       isDir(entry.Mode),
+				IsSubmodule: isSubmodule(entry.Mode),
+				IsSymlink:   isSymlink(entry.Mode),
+				Commit: Commit{
+					Author:  commit.Author.Name,
+					Email:   commit.Author.Email,
+					Message: commit.Message,
+					TimeAgo: timeago.English.Format(commit.Author.When),
+				},
+			})
+			if entry.Mode.IsFile() && entry.Name == "README.md" {
+				loadReadme = true
+			}
+		}()
 	}
+	wg.Wait()
+	fmt.Println("cost", time.Since(now))
 
 	if len(entries) > 0 {
 		sort.Slice(entries, func(i, j int) bool {
@@ -355,12 +405,12 @@ func noRouteHandler() func(*gin.Context) {
 		branchPath := fmt.Sprintf("/%s/%s/tree/%s", orgName, repoName, branchName)
 		entryPath := strings.Join(breadcrumb, "/")
 
-		tree := getRepoTree(orgName, repoName, branchName)
+		repo, tree, commitHash := getRepoTree(orgName, repoName, branchName)
 
 		orgs := loadOrgs()
 		// /:orgName/:repoName/tree/:branchName/...
 		if isTree {
-			entries, loadReadme := getTreeEntries(tree, orgName, repoName, branchName, entryPath)
+			entries, loadReadme := getTreeEntries(repo, tree, commitHash, orgName, repoName, branchName, entryPath)
 
 			c.HTML(http.StatusOK, "repo.htm", gin.H{
 				"OrgName":    orgName,

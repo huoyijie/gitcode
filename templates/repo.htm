@@ -39,13 +39,17 @@
           <div class="list-group">
             {{range .Dir.Entries}}
               <div class="list-group-item list-group-item-action">
-                <a href="{{.Path}}" class="text-decoration-none">
-                  {{if .IsParent}}
-                    <div class="text-dark">{{.Name}}</div>
-                  {{else}}
-                    <i class="bi bi-{{if .IsDir}}folder-fill text-primary{{else if or .IsSubmodule .IsSymlink}}folder-symlink-fill text-warning{{else}}file-earmark text-dark{{end}}"></i> <span class="text-dark">{{.Name}}</span>
-                  {{end}}
-                </a>
+                <div class="row">
+                  <span class="col-12 col-md-5"><a href="{{.Path}}" class="text-decoration-none">
+                    {{if .IsParent}}
+                      <div class="text-dark">{{.Name}}</div>
+                    {{else}}
+                      <i class="bi bi-{{if .IsDir}}folder-fill text-primary{{else if or .IsSubmodule .IsSymlink}}folder-symlink-fill text-warning{{else}}file-earmark text-dark{{end}}"></i> <span class="text-dark">{{.Name}}</span>
+                    {{end}}
+                  </a></span>
+                  <span class="col-6 col-md-4 text-muted">{{.Commit.Message}}</span>
+                  <span class="text-end col-6 col-md-3 text-muted">{{.Commit.TimeAgo}}</span>
+                </div>
               </div>
             {{end}}
           </div>

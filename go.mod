@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-git/go-git/v5 v5.5.2
+	github.com/xeonx/timeago v1.0.0-rc5
 	gopkg.in/yaml.v2 v2.2.4
 )
 
