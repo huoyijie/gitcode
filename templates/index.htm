@@ -43,15 +43,12 @@
         computed: {},
         methods: {
           alert(message, type) {
-            const wrapper = document.createElement('div')
-            wrapper.innerHTML = [
+            this.$refs.liveAlertPlaceholder.innerHTML = [
               `<div class="alert alert-${type} alert-dismissible" role="alert">`,
               `   <div>${message}</div>`,
               '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
               '</div>'
             ].join('')
-
-            this.$refs.liveAlertPlaceholder.append(wrapper)
           },
           change() {
             if (this.org && this.repo) {
@@ -63,17 +60,14 @@
           newRepo() {
             const that = this
             if (that.org && that.repo) {
-              axios.post(`/orgs/${that.org}/repos/${that.repo}/new`, {
-                org: that.org,
-                repo: that.repo
-              }).then((res) => {
-                if (res.data.Code === -10000) {
+              axios.post(`/orgs/${that.org}/repos/${that.repo}/new`, {}).then((res) => {
+                if (res.data.Code === -10001) {
                   that.alert('Repository Already Exists', 'danger')
                   setTimeout(() => {
                     window.location.reload()
                   }, 2000)
                 } else {
-                  that.alert('New Empty Repository Created', 'info')
+                  that.alert('New Empty Repository Created', 'success')
                   setTimeout(() => {
                     window.location.href = '/'
                   }, 2000)

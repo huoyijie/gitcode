@@ -39,8 +39,16 @@ func (a Action) Val() string {
 	return string(a)
 }
 
+type Code int
+
+const (
+	ErrInvalidUsernameOrPassword Code = -(iota + 10000)
+	ErrRepositoryAlreadyExists
+)
+
 type GitcodeConfig struct {
-	Ignore []string
+	Secret, Username, Password string
+	Ignore                     []string
 }
 
 func loadConfig(conf string) (config *GitcodeConfig) {
@@ -55,6 +63,11 @@ func loadConfig(conf string) (config *GitcodeConfig) {
 		log.Fatal(err)
 	}
 	return
+}
+
+type SigninForm struct {
+	Username string `json:"username" binding:"required,alphanum,min=6,max=32"`
+	Password string `json:"password" binding:"required,alphanum,len=64"`
 }
 
 type Org struct {
@@ -111,7 +124,7 @@ func newTemplate() (tmpl *template.Template) {
 	return
 }
 
-func loadOrgs() (orgs []Org, defaultOrg string) {
+func loadOrgs(username string) (orgs []Org, defaultOrg string) {
 	entries, err := os.ReadDir(reposDir)
 	if err != nil {
 		log.Fatal(err)
@@ -132,7 +145,7 @@ Loop:
 		}
 
 		// check permissions
-		if ok := enforcer.Enforce("gitcode", v.Name(), READ.Val()); !ok {
+		if ok := enforcer.Enforce(username, v.Name(), READ.Val()); !ok {
 			continue
 		}
 
@@ -173,13 +186,59 @@ Loop:
 	return
 }
 
+func authHandler() func(*gin.Context) {
+	return func(c *gin.Context) {
+		if token, err := c.Cookie("token"); err == nil {
+			if username, expired, err := ParseToken(token); err == nil && !expired {
+				c.Set("username", username)
+				c.Next()
+				return
+			}
+		}
+		c.Set("username", "guest")
+		c.Next()
+	}
+}
+
 func homeHandler() func(*gin.Context) {
 	return func(c *gin.Context) {
-		orgs, defaultOrg := loadOrgs()
+		orgs, defaultOrg := loadOrgs(c.GetString("username"))
 		c.HTML(http.StatusOK, "index.htm", gin.H{
 			"Orgs":       orgs,
 			"DefaultOrg": defaultOrg,
 			"Hostname":   hostname,
+		})
+	}
+}
+
+func signinPageHandler() func(*gin.Context) {
+	return func(c *gin.Context) {
+		c.HTML(http.StatusOK, "signin.htm", gin.H{})
+	}
+}
+
+func signinHandler() func(*gin.Context) {
+	return func(c *gin.Context) {
+		form := &SigninForm{}
+		if err := c.BindJSON(form); err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+		fmt.Println(form)
+		if form.Username != gitcodeCfg.Username || form.Password != gitcodeCfg.Password {
+			c.JSON(http.StatusOK, gin.H{
+				"Code": ErrInvalidUsernameOrPassword,
+			})
+			return
+		}
+		token, err := GenerateToken(form.Username)
+		if err != nil {
+			log.Fatal(err)
+		}
+		c.SetCookie("token", token, COOKIE_MAX_TTL, "/", hostname, true, true)
+		c.JSON(http.StatusOK, gin.H{
+			"Code":  0,
+			"Token": token,
 		})
 	}
 }
@@ -191,19 +250,19 @@ func newRepoHandler() func(*gin.Context) {
 		repoPath := filepath.Join(reposDir, orgName, repoName+".git")
 
 		// check permissions
-		if ok := enforcer.Enforce("gitcode", orgName, WRITE.Val()); !ok {
+		if ok := enforcer.Enforce(c.GetString("username"), orgName, WRITE.Val()); !ok {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
-		var code int
+		var code Code
 		if _, err := git.PlainInit(repoPath, true); err != nil {
 			// error occurs
 			if !errors.Is(err, git.ErrRepositoryAlreadyExists) {
 				c.AbortWithError(http.StatusInternalServerError, err)
 				return
 			}
-			code = -10000
+			code = ErrRepositoryAlreadyExists
 		}
 
 		c.JSON(http.StatusOK, gin.H{
@@ -433,7 +492,7 @@ func noRouteHandler() func(*gin.Context) {
 		}
 
 		// check permissions
-		if ok := enforcer.Enforce("gitcode", orgName, READ.Val()); !ok {
+		if ok := enforcer.Enforce(c.GetString("username"), orgName, READ.Val()); !ok {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
@@ -443,7 +502,7 @@ func noRouteHandler() func(*gin.Context) {
 
 		repo, tree, commitHash := getRepoTree(orgName, repoName, branchName)
 
-		orgs, defaultOrg := loadOrgs()
+		orgs, defaultOrg := loadOrgs(c.GetString("username"))
 		// /:orgName/:repoName/tree/:branchName/...
 		if isTree {
 			entries, loadReadme := getTreeEntries(repo, tree, commitHash, orgName, repoName, branchName, entryPath)
@@ -543,10 +602,11 @@ func main() {
 
 	router := gin.Default()
 	router.SetHTMLTemplate(newTemplate())
-
-	router.GET("/", homeHandler())
-	router.POST("/orgs/:orgName/repos/:repoName/new", newRepoHandler())
-	router.NoRoute(noRouteHandler())
+	router.GET("/signin", signinPageHandler())
+	router.POST("/signin", signinHandler())
+	router.GET("/", authHandler(), homeHandler())
+	router.POST("/orgs/:orgName/repos/:repoName/new", authHandler(), newRepoHandler())
+	router.NoRoute(authHandler(), noRouteHandler())
 
 	router.SetTrustedProxies(nil)
 	router.Run(fmt.Sprintf("%s:%d", host, port))
