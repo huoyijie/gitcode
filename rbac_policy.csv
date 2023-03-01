@@ -1,0 +1,7 @@
+p, role_admin, efs, read
+p, role_admin, efs, write
+p, role_admin, huoyijie, read
+p, role_admin, huoyijie, write
+p, role_guest, huoyijie, read
+g, gitcode, role_admin
+g, guest, role_guest

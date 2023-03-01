@@ -3,6 +3,7 @@ module github.com/huoyijie/gitcode
 go 1.20
 
 require (
+	github.com/casbin/casbin v1.9.1
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-git/go-git/v5 v5.5.2
 	github.com/xeonx/timeago v1.0.0-rc5
@@ -10,6 +11,7 @@ require (
 )
 
 require (
+	github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20221026131551-cf6655e29de4 // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect

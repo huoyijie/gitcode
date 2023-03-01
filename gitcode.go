@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/casbin/casbin"
 	"github.com/gin-gonic/gin"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -99,12 +100,11 @@ func newTemplate() (tmpl *template.Template) {
 	return
 }
 
-func loadOrgs() []Org {
+func loadOrgs() (orgs []Org, defaultOrg string) {
 	entries, err := os.ReadDir(reposDir)
 	if err != nil {
 		log.Fatal(err)
 	}
-	var orgs []Org
 Loop:
 	for _, v := range entries {
 		hidden := strings.HasPrefix(v.Name(), ".")
@@ -118,6 +118,11 @@ Loop:
 			if v.Name() == ignore {
 				continue Loop
 			}
+		}
+
+		// check permissions
+		if ok := enforcer.Enforce("gitcode", v.Name(), "read"); !ok {
+			continue
 		}
 
 		subEntries, err := os.ReadDir(filepath.Join(reposDir, v.Name()))
@@ -148,15 +153,21 @@ Loop:
 		}
 		orgs = append(orgs, Org{Name: v.Name(), Repos: repos})
 	}
-	return orgs
+
+	if len(orgs) > 0 {
+		defaultOrg = orgs[0].Name
+	} else {
+		defaultOrg = ""
+	}
+	return
 }
 
 func homeHandler() func(*gin.Context) {
 	return func(c *gin.Context) {
-		orgs := loadOrgs()
+		orgs, defaultOrg := loadOrgs()
 		c.HTML(http.StatusOK, "index.htm", gin.H{
 			"Orgs":       orgs,
-			"DefaultOrg": orgs[0],
+			"DefaultOrg": defaultOrg,
 			"Hostname":   hostname,
 		})
 	}
@@ -168,14 +179,22 @@ func newRepoHandler() func(*gin.Context) {
 		repoName := c.Param("repoName")
 		repoPath := filepath.Join(reposDir, orgName, repoName+".git")
 
+		// check permissions
+		if ok := enforcer.Enforce("gitcode", orgName, "write"); !ok {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
 		var code int
 		if _, err := git.PlainInit(repoPath, true); err != nil {
-			if errors.Is(err, git.ErrRepositoryAlreadyExists) {
-				code = -10000
-			} else {
-				code = -10001
+			// error occurs
+			if !errors.Is(err, git.ErrRepositoryAlreadyExists) {
+				c.AbortWithError(http.StatusInternalServerError, err)
+				return
 			}
+			code = -10000
 		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"Code": code,
 		})
@@ -402,12 +421,18 @@ func noRouteHandler() func(*gin.Context) {
 			}
 		}
 
+		// check permissions
+		if ok := enforcer.Enforce("gitcode", orgName, "read"); !ok {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
 		branchPath := fmt.Sprintf("/%s/%s/tree/%s", orgName, repoName, branchName)
 		entryPath := strings.Join(breadcrumb, "/")
 
 		repo, tree, commitHash := getRepoTree(orgName, repoName, branchName)
 
-		orgs := loadOrgs()
+		orgs, defaultOrg := loadOrgs()
 		// /:orgName/:repoName/tree/:branchName/...
 		if isTree {
 			entries, loadReadme := getTreeEntries(repo, tree, commitHash, orgName, repoName, branchName, entryPath)
@@ -425,7 +450,7 @@ func noRouteHandler() func(*gin.Context) {
 				"LoadReadme": loadReadme,
 				"ReadmePath": filepath.Join(fmt.Sprintf("/%s/%s/blob/%s", orgName, repoName, branchName), entryPath, "README.md"),
 				"Orgs":       orgs,
-				"DefaultOrg": orgs[0],
+				"DefaultOrg": defaultOrg,
 			})
 			return
 		}
@@ -467,7 +492,7 @@ func noRouteHandler() func(*gin.Context) {
 						"BasePath":   filepath.Dir(path),
 						"HomePage":   filepath.Base(path) + "?raw=true",
 						"Orgs":       orgs,
-						"DefaultOrg": orgs[0],
+						"DefaultOrg": defaultOrg,
 					})
 				} else {
 					c.HTML(http.StatusOK, "repo.htm", gin.H{
@@ -479,7 +504,7 @@ func noRouteHandler() func(*gin.Context) {
 						"Breadcrumb": getBreadcrumb(branchPath, breadcrumb),
 						"File":       File{file.Size, path + "?raw=true", lang},
 						"Orgs":       orgs,
-						"DefaultOrg": orgs[0],
+						"DefaultOrg": defaultOrg,
 					})
 				}
 			}
@@ -491,6 +516,7 @@ var (
 	port                     int
 	host, hostname, reposDir string
 	gitcodeCfg               *GitcodeConfig
+	enforcer                 *casbin.Enforcer
 )
 
 func main() {
@@ -498,9 +524,11 @@ func main() {
 	flag.IntVar(&port, "port", 8000, "the port that server listen on")
 	flag.StringVar(&host, "host", "127.0.0.1", "the host that server listen on")
 	flag.StringVar(&hostname, "hostname", "huoyijie.cn", "the host name of the server")
-	flag.StringVar(&reposDir, "repos", "/srv", "the director where repos store")
+	flag.StringVar(&reposDir, "repos", "/srv", "the directory where repos store")
 	flag.Parse()
 	gitcodeCfg = loadConfig(filepath.Join(reposDir, "gitcode.yaml"))
+
+	enforcer = casbin.NewEnforcer("./rbac_model.conf", "./rbac_policy.csv")
 
 	router := gin.Default()
 	router.SetHTMLTemplate(newTemplate())

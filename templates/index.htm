@@ -35,7 +35,7 @@
         data() {
           return {
             hostname: '{{.Hostname}}',
-            org: "{{.DefaultOrg.Name}}",
+            org: "{{.DefaultOrg}}",
             repo: '',
             btnOpenRepoDisabled: true
           }
@@ -60,7 +60,7 @@
               }).catch((err) => {
                 console.log(err)
               }).finally(() => {
-                this.org = "{{.DefaultOrg.Name}}"
+                this.org = "{{.DefaultOrg}}"
                 this.repo = ''
                 this.btnOpenRepoDisabled = true
               })
@@ -98,7 +98,7 @@
         mounted() {
           const that = this
           that.$refs.modalNewRepo.addEventListener('hidden.bs.modal', () => {
-            that.org = "{{.DefaultOrg.Name}}"
+            that.org = "{{.DefaultOrg}}"
             that.repo = ''
             that.btnOpenRepoDisabled = true
           })
