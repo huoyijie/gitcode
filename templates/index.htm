@@ -65,24 +65,24 @@
                   that.alert('Repository Already Exists', 'danger')
                   setTimeout(() => {
                     window.location.reload()
-                  }, 2000)
+                  }, 1500)
                 } else {
                   that.alert('New Empty Repository Created', 'success')
                   setTimeout(() => {
                     window.location.href = '/'
-                  }, 2000)
+                  }, 1500)
                 }
               }).catch((err) => {
                 if (err.response.status === 401) {
                   that.alert('Unauthorized', 'danger')
                   setTimeout(() => {
                     window.location.href = '/signin'
-                  }, 2000)
+                  }, 1500)
                 } else {
                   that.alert('Internal Server Error', 'danger')
                   setTimeout(() => {
                     window.location.reload()
-                  }, 2000)
+                  }, 1500)
                 }
               }).finally(() => {
                 bootstrap.Modal.getInstance(that.$refs.modalNewRepo).hide()
