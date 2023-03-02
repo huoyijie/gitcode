@@ -62,6 +62,12 @@ Open `http://127.0.0.1:8787/` with the browser
 * create new repo `done`
 * sign in/sign out/auth by role `done`
 
+## Bug
+
+1. svg image
+2. submodule -> huoyijie
+3. commits goroutinue concurrent err
+
 ## Future
 
 * show commits (slow)
