@@ -62,8 +62,6 @@ Open `http://127.0.0.1:8787/` with the browser
 * create new repo `done`
 * sign in/sign out/auth by role `done`
 
-bug: request readme.md twice, and the first one canceled.
-
 ## Future
 
 * show commits (slow)
