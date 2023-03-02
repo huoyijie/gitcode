@@ -204,7 +204,7 @@ func homeHandler() func(*gin.Context) {
 	return func(c *gin.Context) {
 		orgs, defaultOrg := loadOrgs(c.GetString("username"))
 		c.HTML(http.StatusOK, "index.htm", gin.H{
-			"Year": time.Now().Year(),
+			"Year":       time.Now().Year(),
 			"Hostname":   hostname,
 			"Orgs":       orgs,
 			"DefaultOrg": defaultOrg,
@@ -517,7 +517,7 @@ func noRouteHandler() func(*gin.Context) {
 			entries, loadReadme := getTreeEntries(repo, tree, commitHash, orgName, repoName, branchName, entryPath)
 
 			c.HTML(http.StatusOK, "repo.htm", gin.H{
-				"Year": time.Now().Year(),
+				"Year":       time.Now().Year(),
 				"Hostname":   hostname,
 				"OrgName":    orgName,
 				"RepoName":   repoName,
@@ -571,7 +571,7 @@ func noRouteHandler() func(*gin.Context) {
 				}
 				if lang == "md" {
 					c.HTML(http.StatusOK, "readme.htm", gin.H{
-						"Year": time.Now().Year(),
+						"Year":       time.Now().Year(),
 						"Hostname":   hostname,
 						"BasePath":   filepath.Dir(path),
 						"HomePage":   filepath.Base(path) + "?raw=true",
@@ -583,7 +583,7 @@ func noRouteHandler() func(*gin.Context) {
 					})
 				} else {
 					c.HTML(http.StatusOK, "repo.htm", gin.H{
-						"Year": time.Now().Year(),
+						"Year":       time.Now().Year(),
 						"Hostname":   hostname,
 						"OrgName":    orgName,
 						"RepoName":   repoName,
@@ -621,14 +621,16 @@ func main() {
 	enforcer = casbin.NewEnforcer(filepath.Join(reposDir, "rbac_model.conf"), filepath.Join(reposDir, "rbac_policy.csv"))
 
 	router := gin.Default()
+	router.SetTrustedProxies(nil)
 	router.SetHTMLTemplate(newTemplate())
+	router.Use(authHandler())
+
 	router.GET("signin", signinPageHandler())
 	router.POST("signin", signinHandler())
 	router.GET("signout", signoutHandler())
-	router.GET("/", authHandler(), homeHandler())
-	router.POST("orgs/:orgName/repos/:repoName/new", authHandler(), newRepoHandler())
-	router.NoRoute(authHandler(), noRouteHandler())
+	router.GET("/", homeHandler())
+	router.POST("orgs/:orgName/repos/:repoName/new", newRepoHandler())
+	router.NoRoute(noRouteHandler())
 
-	router.SetTrustedProxies(nil)
 	router.Run(fmt.Sprintf("%s:%d", host, port))
 }
