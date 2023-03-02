@@ -186,7 +186,7 @@ Loop:
 	return
 }
 
-func authHandler() func(*gin.Context) {
+func authHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if token, err := c.Cookie("token"); err == nil {
 			if username, expired, err := ParseToken(token); err == nil && !expired {
@@ -200,7 +200,7 @@ func authHandler() func(*gin.Context) {
 	}
 }
 
-func homeHandler() func(*gin.Context) {
+func homeHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		orgs, defaultOrg := loadOrgs(c.GetString("username"))
 		c.HTML(http.StatusOK, "index.htm", gin.H{
@@ -213,13 +213,13 @@ func homeHandler() func(*gin.Context) {
 	}
 }
 
-func signinPageHandler() func(*gin.Context) {
+func signinPageHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.HTML(http.StatusOK, "signin.htm", gin.H{})
 	}
 }
 
-func signinHandler() func(*gin.Context) {
+func signinHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		form := &SigninForm{}
 		if err := c.BindJSON(form); err != nil {
@@ -245,14 +245,14 @@ func signinHandler() func(*gin.Context) {
 	}
 }
 
-func signoutHandler() func(*gin.Context) {
+func signoutHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.SetCookie("token", "", -1, "/", hostname, true, true)
 		c.JSON(http.StatusOK, gin.H{"Code": 0})
 	}
 }
 
-func newRepoHandler() func(*gin.Context) {
+func newRepoHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		orgName := c.Param("orgName")
 		repoName := c.Param("repoName")
@@ -479,7 +479,7 @@ func getBreadcrumb(branchPath string, breadcrumb []string) []BreadcrumbItem {
 	return tmp
 }
 
-func noRouteHandler() func(*gin.Context) {
+func noRouteHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := strings.TrimSuffix(c.Request.URL.Path, "/")
 		isTree := strings.Contains(path, "/tree/")
