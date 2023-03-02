@@ -99,8 +99,13 @@
             if (branch) {
               window.location.href = `/${org}/${repo}/tree/${branch}`
             } else {
-              this.alert(`Please clone first: git clone git@${this.hostname}:${org}/${repo}.git`, 'danger')
+              this.alert(`git clone git@${this.hostname}:${org}/${repo}.git`, 'danger')
             }
+          },
+          signout() {
+            axios.get('/signout').finally(() => {
+              window.location.href = '/'
+            })
           }
         },
         created() {},

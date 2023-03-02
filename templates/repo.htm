@@ -149,6 +149,11 @@
             setTimeout(() => {
               that.btnCopy = 'Copy'
             }, 2000)
+          },
+          signout() {
+            axios.get('/signout').finally(() => {
+              window.location.href = '/'
+            })
           }
         },
         created() {},

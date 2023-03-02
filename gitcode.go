@@ -207,6 +207,7 @@ func homeHandler() func(*gin.Context) {
 			"Orgs":       orgs,
 			"DefaultOrg": defaultOrg,
 			"Hostname":   hostname,
+			"Username":   c.GetString("username"),
 		})
 	}
 }
@@ -235,11 +236,18 @@ func signinHandler() func(*gin.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.SetCookie("token", token, COOKIE_MAX_TTL, "/", "127.0.0.1", true, true)
+		c.SetCookie("token", token, COOKIE_MAX_TTL, "/", hostname, true, true)
 		c.JSON(http.StatusOK, gin.H{
 			"Code":  0,
 			"Token": token,
 		})
+	}
+}
+
+func signoutHandler() func(*gin.Context) {
+	return func(c *gin.Context) {
+		c.SetCookie("token", "", -1, "/", hostname, true, true)
+		c.JSON(http.StatusOK, gin.H{"Code": 0})
 	}
 }
 
@@ -521,6 +529,7 @@ func noRouteHandler() func(*gin.Context) {
 				"ReadmePath": filepath.Join(fmt.Sprintf("/%s/%s/blob/%s", orgName, repoName, branchName), entryPath, "README.md"),
 				"Orgs":       orgs,
 				"DefaultOrg": defaultOrg,
+				"Username":   c.GetString("username"),
 			})
 			return
 		}
@@ -563,6 +572,7 @@ func noRouteHandler() func(*gin.Context) {
 						"HomePage":   filepath.Base(path) + "?raw=true",
 						"Orgs":       orgs,
 						"DefaultOrg": defaultOrg,
+						"Username":   c.GetString("username"),
 					})
 				} else {
 					c.HTML(http.StatusOK, "repo.htm", gin.H{
@@ -575,6 +585,7 @@ func noRouteHandler() func(*gin.Context) {
 						"File":       File{file.Size, path + "?raw=true", lang},
 						"Orgs":       orgs,
 						"DefaultOrg": defaultOrg,
+						"Username":   c.GetString("username"),
 					})
 				}
 			}
@@ -604,6 +615,7 @@ func main() {
 	router.SetHTMLTemplate(newTemplate())
 	router.GET("/signin", signinPageHandler())
 	router.POST("/signin", signinHandler())
+	router.GET("/signout", signoutHandler())
 	router.GET("/", authHandler(), homeHandler())
 	router.POST("/orgs/:orgName/repos/:repoName/new", authHandler(), newRepoHandler())
 	router.NoRoute(authHandler(), noRouteHandler())

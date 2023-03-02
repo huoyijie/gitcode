@@ -62,11 +62,7 @@ Open `http://127.0.0.1:8787/` with the browser
 * create new repo `done`
 * sign in/auth by role
 
-show username and signout
-
 bug: request readme.md twice, and the first one canceled.
-
-c.SetCookie("token", token, COOKIE_MAX_TTL, "/", "127.0.0.1", true, true)
 
 ## Future
 

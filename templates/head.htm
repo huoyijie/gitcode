@@ -35,11 +35,22 @@
       <div class="px-3 py-2 border-bottom mb-3">
         <div class="container d-flex flex-wrap justify-content-between">
           <div>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNewRepo"><i class="bi bi-plus-circle"></i> Repository</button>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNewRepo"><i class="bi bi-plus-circle"></i> Repository</button>
           </div>
-          <div>
-            <a href="/signin" class="btn btn-secondary">Sign in</a>
-          </div>
+          {{if eq .Username "guest"}}
+            <div>
+              <a href="/signin" class="btn btn-sm btn-outline-secondary">Sign in</a>
+            </div>
+          {{else}}
+            <div class="dropdown">
+              <button class="btn btn-link text-decoration-none dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                {{.Username}}
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" @click="signout">Sign out</a></li>
+              </ul>
+            </div>
+          {{end}}
         </div>
       </div>
     </header>
@@ -59,7 +70,7 @@
             </select>
             <div class="form-floating">
               <input type="text" class="form-control rounded-3" id="floatingNewRepo" placeholder="Repository" v-model="repo" @input="change">
-              <label for="floatingNewRepo" class="text-muted">Input repository name</label>
+              <label for="floatingNewRepo" class="text-muted">repository...</label>
             </div>
           </div>
           <div class="modal-footer">
