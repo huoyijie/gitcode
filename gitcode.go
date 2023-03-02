@@ -570,6 +570,8 @@ func noRouteHandler() func(*gin.Context) {
 					c.HTML(http.StatusOK, "readme.htm", gin.H{
 						"BasePath":   filepath.Dir(path),
 						"HomePage":   filepath.Base(path) + "?raw=true",
+						"OrgName":    orgName,
+						"RepoName":   repoName,
 						"Orgs":       orgs,
 						"DefaultOrg": defaultOrg,
 						"Username":   c.GetString("username"),

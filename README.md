@@ -60,7 +60,7 @@ Open `http://127.0.0.1:8787/` with the browser
 * ssh proxy/ssh clone `done`
 * render markdown/readme `done`
 * create new repo `done`
-* sign in/auth by role
+* sign in/sign out/auth by role `done`
 
 bug: request readme.md twice, and the first one canceled.
 
