@@ -204,9 +204,10 @@ func homeHandler() func(*gin.Context) {
 	return func(c *gin.Context) {
 		orgs, defaultOrg := loadOrgs(c.GetString("username"))
 		c.HTML(http.StatusOK, "index.htm", gin.H{
+			"Year": time.Now().Year(),
+			"Hostname":   hostname,
 			"Orgs":       orgs,
 			"DefaultOrg": defaultOrg,
-			"Hostname":   hostname,
 			"Username":   c.GetString("username"),
 		})
 	}
@@ -516,6 +517,8 @@ func noRouteHandler() func(*gin.Context) {
 			entries, loadReadme := getTreeEntries(repo, tree, commitHash, orgName, repoName, branchName, entryPath)
 
 			c.HTML(http.StatusOK, "repo.htm", gin.H{
+				"Year": time.Now().Year(),
+				"Hostname":   hostname,
 				"OrgName":    orgName,
 				"RepoName":   repoName,
 				"BranchName": branchName,
@@ -568,6 +571,8 @@ func noRouteHandler() func(*gin.Context) {
 				}
 				if lang == "md" {
 					c.HTML(http.StatusOK, "readme.htm", gin.H{
+						"Year": time.Now().Year(),
+						"Hostname":   hostname,
 						"BasePath":   filepath.Dir(path),
 						"HomePage":   filepath.Base(path) + "?raw=true",
 						"OrgName":    orgName,
@@ -578,6 +583,8 @@ func noRouteHandler() func(*gin.Context) {
 					})
 				} else {
 					c.HTML(http.StatusOK, "repo.htm", gin.H{
+						"Year": time.Now().Year(),
+						"Hostname":   hostname,
 						"OrgName":    orgName,
 						"RepoName":   repoName,
 						"BranchName": branchName,
