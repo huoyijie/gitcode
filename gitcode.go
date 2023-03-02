@@ -598,7 +598,7 @@ func main() {
 	flag.Parse()
 	gitcodeCfg = loadConfig(filepath.Join(reposDir, "gitcode.yaml"))
 
-	enforcer = casbin.NewEnforcer("./rbac_model.conf", "./rbac_policy.csv")
+	enforcer = casbin.NewEnforcer(filepath.Join(reposDir, "rbac_model.conf"), filepath.Join(reposDir, "rbac_policy.csv"))
 
 	router := gin.Default()
 	router.SetHTMLTemplate(newTemplate())
