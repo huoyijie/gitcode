@@ -35,11 +35,11 @@
       <div class="px-3 py-2 border-bottom mb-3">
         <div class="container d-flex flex-wrap justify-content-between">
           <div>
-            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNewRepo"><i class="bi bi-plus-circle"></i> Repository</button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNewRepo"><i class="bi bi-plus-circle"></i> Repository</button>
           </div>
           {{if eq .Username "guest"}}
             <div>
-              <a href="/signin" class="btn btn-sm btn-outline-secondary">Sign in</a>
+              <a href="/signin" class="btn btn-outline-secondary">Sign in</a>
             </div>
           {{else}}
             <div class="dropdown">

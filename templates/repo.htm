@@ -54,6 +54,11 @@
               </div>
             {{end}}
           </div>
+          {{if .LoadReadme}}
+            <div>
+              <iframe src="{{.ReadmePath}}" width="100%" frameborder="0" scrolling="no" @load="resizeIframe"></iframe>
+            </div>
+          {{end}}
         {{end}}
         {{if .Blob}}
           <div>
@@ -61,11 +66,6 @@
           </div>
         {{end}}
       </div>
-      {{if and .Tree .LoadReadme}}
-        <div>
-          <iframe src="{{.ReadmePath}}" width="100%" frameborder="0" scrolling="no" @load="resizeIframe"></iframe>
-        </div>
-      {{end}}
     </main>
 
     <script>

@@ -613,11 +613,11 @@ func main() {
 
 	router := gin.Default()
 	router.SetHTMLTemplate(newTemplate())
-	router.GET("/signin", signinPageHandler())
-	router.POST("/signin", signinHandler())
-	router.GET("/signout", signoutHandler())
+	router.GET("signin", signinPageHandler())
+	router.POST("signin", signinHandler())
+	router.GET("signout", signoutHandler())
 	router.GET("/", authHandler(), homeHandler())
-	router.POST("/orgs/:orgName/repos/:repoName/new", authHandler(), newRepoHandler())
+	router.POST("orgs/:orgName/repos/:repoName/new", authHandler(), newRepoHandler())
 	router.NoRoute(authHandler(), noRouteHandler())
 
 	router.SetTrustedProxies(nil)
