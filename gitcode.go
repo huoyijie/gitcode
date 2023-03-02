@@ -188,7 +188,7 @@ Loop:
 
 func authHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if token, err := c.Cookie("token"); err == nil {
+		if token, err := c.Cookie("gc_t"); err == nil {
 			if username, expired, err := ParseToken(token); err == nil && !expired {
 				c.Set("username", username)
 				c.Next()
@@ -237,7 +237,7 @@ func signinHandler() gin.HandlerFunc {
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.SetCookie("token", token, COOKIE_MAX_TTL, "/", hostname, true, true)
+		c.SetCookie("gc_t", token, COOKIE_MAX_TTL, "/", hostname, true, true)
 		c.JSON(http.StatusOK, gin.H{
 			"Code":  0,
 			"Token": token,
@@ -247,7 +247,7 @@ func signinHandler() gin.HandlerFunc {
 
 func signoutHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.SetCookie("token", "", -1, "/", hostname, true, true)
+		c.SetCookie("gc_t", "", -1, "/", hostname, true, true)
 		c.JSON(http.StatusOK, gin.H{"Code": 0})
 	}
 }
