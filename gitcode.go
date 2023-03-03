@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/casbin/casbin"
@@ -414,49 +413,36 @@ func getTreeEntries(repo *git.Repository, tree *object.Tree, commitHash plumbing
 		})
 	}
 
-	var wg sync.WaitGroup
-	var lock sync.Mutex
-	now := time.Now()
-	for i := range dstTree.Entries {
-		wg.Add(1)
+	start := time.Now()
+	for _, entry := range dstTree.Entries {
+		commits, err := repo.Log(getLogOptions(commitHash, filepath.Join(entryPath, entry.Name)))
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer commits.Close()
+		commit, err := commits.Next()
+		if err != nil {
+			log.Fatal(err)
+		}
 
-		i := i
-		go func() {
-			defer wg.Done()
-
-			entry := dstTree.Entries[i]
-			commits, err := repo.Log(getLogOptions(commitHash, filepath.Join(entryPath, entry.Name)))
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer commits.Close()
-			commit, err := commits.Next()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			lock.Lock()
-			defer lock.Unlock()
-			entries = append(entries, Entry{
-				Name:        entry.Name,
-				Path:        getEntryPath(cfg, entry, pathFmt),
-				IsDir:       isDir(entry.Mode),
-				IsSubmodule: isSubmodule(entry.Mode),
-				IsSymlink:   isSymlink(entry.Mode),
-				Commit: Commit{
-					Author:  commit.Author.Name,
-					Email:   commit.Author.Email,
-					Message: commit.Message,
-					TimeAgo: timeago.English.Format(commit.Author.When),
-				},
-			})
-			if entry.Mode.IsFile() && entry.Name == "README.md" {
-				loadReadme = true
-			}
-		}()
+		entries = append(entries, Entry{
+			Name:        entry.Name,
+			Path:        getEntryPath(cfg, entry, pathFmt),
+			IsDir:       isDir(entry.Mode),
+			IsSubmodule: isSubmodule(entry.Mode),
+			IsSymlink:   isSymlink(entry.Mode),
+			Commit: Commit{
+				Author:  commit.Author.Name,
+				Email:   commit.Author.Email,
+				Message: commit.Message,
+				TimeAgo: timeago.English.Format(commit.Author.When),
+			},
+		})
+		if entry.Mode.IsFile() && entry.Name == "README.md" {
+			loadReadme = true
+		}
 	}
-	wg.Wait()
-	fmt.Println("cost", time.Since(now))
+	fmt.Println("load commits cost", time.Since(start))
 
 	if len(entries) > 0 {
 		sort.Slice(entries, func(i, j int) bool {
