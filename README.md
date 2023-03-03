@@ -65,8 +65,8 @@ Open `http://127.0.0.1:8787/` with the browser
 ## Bug
 
 1. svg image
-2. submodule -> huoyijie
-3. commits goroutinue concurrent err
+2. commits goroutinue concurrent err
+3. auto highlights
 
 ## Future
 
