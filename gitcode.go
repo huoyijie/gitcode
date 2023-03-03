@@ -556,6 +556,8 @@ func noRouteHandler() gin.HandlerFunc {
 					lang = ext[1:]
 					if lang == "rs" {
 						lang = "rust"
+					} else if lang == "htm" {
+						lang = "html"
 					}
 				}
 				if lang == "md" {
