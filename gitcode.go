@@ -550,7 +550,7 @@ func noRouteHandler() gin.HandlerFunc {
 
 			ext := filepath.Ext(path)
 			raw := c.Query("raw") == "true"
-			if raw || isBin {
+			if raw || isBin || strings.EqualFold(ext, ".svg") {
 				reader, err := file.Reader()
 				if err != nil {
 					log.Fatal(err)
