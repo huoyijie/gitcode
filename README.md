@@ -61,10 +61,10 @@ Open `http://127.0.0.1:8787/` with the browser
 * render markdown/readme `done`
 * create new repo `done`
 * sign in/sign out/auth by role `done`
-* code highlights, auto load script file by backend logic
 
 ## Future
 
+* code highlights, auto load script file
 * show commits (very slow)
 * show branchs/tags
 * search repo
