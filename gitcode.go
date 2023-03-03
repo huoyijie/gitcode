@@ -554,6 +554,9 @@ func noRouteHandler() gin.HandlerFunc {
 				lang := "none"
 				if len(ext) > 0 {
 					lang = ext[1:]
+					if lang == "rs" {
+						lang = "rust"
+					}
 				}
 				if lang == "md" {
 					c.HTML(http.StatusOK, "readme.htm", gin.H{
