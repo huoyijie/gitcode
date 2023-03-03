@@ -61,21 +61,16 @@ Open `http://127.0.0.1:8787/` with the browser
 * render markdown/readme `done`
 * create new repo `done`
 * sign in/sign out/auth by role `done`
-
-## Bug
-
-1. commits goroutinue concurrent err
-2. auto highlights
+* code highlights, auto load script file by backend logic
 
 ## Future
 
-* show commits (slow)
+* show commits (very slow)
 * show branchs/tags
 * search repo
 * search code
 * issues
 * pull request
-* code highlights, auto load script file by backend logic
 * code diff
 * merge request
 * hook and build docker image
