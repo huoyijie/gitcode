@@ -10,7 +10,7 @@
 
 * Support organization
 
-e.g.: git clone git@huoyijie.cn:`go`/gitcode.git, gitcode.git repository stored in organization `go`
+e.g.: git clone `git@huoyijie.cn`:`go`/gitcode.git, gitcode.git repository stored in organization `go`
 
 * Support new repository
 * Support authorization by repository
