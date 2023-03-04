@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[gitcode] is a personal lightweight self-hosted git server written in Go. It stands on top of git, go-git, and powered by Bootstrap, Vue, Docsify and Prismjs. It's about the same as gitweb now.
+[gitcode](https://github.com/huoyijie/gitcode) is a personal lightweight self-hosted git server written in Go. It stands on top of git, go-git, and powered by Bootstrap, Vue, Docsify and Prismjs. It's about the same as gitweb now.
 
 [My personal gitcodes](https://huoyijie.cn:1024)
 
