@@ -1,5 +1,55 @@
-# gitcode
-self-hosted git server written in Go
+# Gitcode
+
+## Introduction
+
+[gitcode] is a personal lightweight self-hosted git server written in Go. It stands on top of git, go-git, and powered by Bootstrap, Vue, Docsify and Prismjs. It's about the same as gitweb now.
+
+[My personal gitcodes](https://huoyijie.cn:1024)
+
+## Features
+
+* Support organization
+
+e.g.: git clone git@huoyijie.cn:`go`/gitcode.git, gitcode.git repository stored in organization `go`
+
+* Support new repository
+* Support authorization by repository
+* Browse or clone authorized code repositories
+* Support markdown automatic rendering
+* Support code highlighting
+
+![Home](docs/images/gitcode-home.png)
+
+![Markdown](docs/images/gitcode-markdown.png)
+
+![Code highlights](docs/images/gitcode-highlights.png)
+
+## Prerequisites
+
+* Go 1.20+
+
+## Install
+
+```bash
+$ git@github.com:huoyijie/gitcode.git
+
+$ cd gitcode
+
+$ go install .
+```
+
+```bash
+$ gitcode -h
+Usage of gitcode:
+  -host string
+    	the host that server listen on (default "127.0.0.1")
+  -hostname string
+    	the host name of the server (default "huoyijie.cn")
+  -port int
+    	the port that server listen on (default 8000)
+  -repos string
+    	the director where repos store (default "/home/git")
+```
 
 ## Run gitcode
 
@@ -24,7 +74,6 @@ Group=git
 Type=idle
 Environment="GIN_MODE=release"
 ExecStart=/home/ubuntu/go/bin/gitcode -port 8787 -repos /home/git
-WorkingDirectory=/home/ubuntu/gowork/gitcode
 Restart=always
 KillMode=process
 
@@ -51,6 +100,43 @@ $ ssh -N -L 8787:127.0.0.1:8787 -o ServerAliveInterval=5 git@huoyijie.cn
 ```
 
 Open `http://127.0.0.1:8787/` with the browser
+
+In order to safely access gitcode througth the public network, you can configure nginx reverse proxy and TLS.
+
+e.g.: [Demo](https://huoyijie.cn:1024)
+
+## Authorization (based on casbin)
+
+You can take a look at examples directory.
+
+* RBAC model
+```conf
+[request_definition]
+r = sub, obj, act
+
+[policy_definition]
+p = sub, obj, act
+
+[role_definition]
+g = _, _
+
+[policy_effect]
+e = some(where (p.eft == allow))
+
+[matchers]
+m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
+```
+
+* RBAC policy
+```csv
+p, role_admin, efs, read
+p, role_admin, efs, write
+p, role_admin, huoyijie, read
+p, role_admin, huoyijie, write
+p, role_guest, huoyijie, read
+g, gitcode, role_admin
+g, guest, role_guest
+```
 
 ## TODO
 

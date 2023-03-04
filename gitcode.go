@@ -605,7 +605,7 @@ func main() {
 	flag.IntVar(&port, "port", 8000, "the port that server listen on")
 	flag.StringVar(&host, "host", "127.0.0.1", "the host that server listen on")
 	flag.StringVar(&hostname, "hostname", "huoyijie.cn", "the host name of the server")
-	flag.StringVar(&reposDir, "repos", "/srv", "the directory where repos store")
+	flag.StringVar(&reposDir, "repos", "/home/git", "the directory where repos store")
 	flag.Parse()
 	gitcodeCfg = loadConfig(filepath.Join(reposDir, "gitcode.yaml"))
 
